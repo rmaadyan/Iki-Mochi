@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+import 'package:get/get.dart';
+import 'app/modules/mochi/bindings/mochi_binding.dart';
+import 'app/modules/mochi/views/home_page.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Mochi Restaurant',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        fontFamily: 'Poppins',
-      ),
-      home: const HomePage(),
       debugShowCheckedModeBanner: false,
+      initialBinding: MochiBinding(), // optional: register at app start
+      home: const HomePage(),
+      theme: ThemeData(fontFamily: 'Poppins', primarySwatch: Colors.pink),
     );
   }
 }
