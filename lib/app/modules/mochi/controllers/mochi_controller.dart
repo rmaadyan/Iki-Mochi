@@ -2,11 +2,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
-// Pastikan path ini sesuai projectmu. Kalau pakai package: import,
-// ganti ke: import 'package:your_package_name/app/data/services/http_mochi_service.dart';
 import 'package:mochi/app/data/services/http_mochi_services.dart';
 import 'package:mochi/app/data/services/dio_mochi_service.dart';
-
 
 /// Simple Cart item class for local use
 class CartItem {
@@ -27,7 +24,6 @@ class CartItem {
 
 /// MochiController - Getx controller managing lists, fetching via HTTP/Dio and cart
 class MochiController extends GetxController {
-  // Services injected via constructor (use Get.put / Get.lazyPut in binding)
   final HttpMochiService httpService;
   final DioMochiService dioService;
 
@@ -43,13 +39,13 @@ class MochiController extends GetxController {
   // Cart stored locally (keyed by id)
   final RxMap<String, CartItem> cart = <String, CartItem>{}.obs;
 
-  // Which fetch method was last used (for experimentation)
+  // Which fetch method was last used
   final RxString lastFetchMethod = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // optionally auto fetch default dataset using http
+    // Optionally auto-fetch default dataset
     fetchWithHttp();
   }
 
@@ -57,35 +53,50 @@ class MochiController extends GetxController {
   // Fetching methods
   // -------------------------
 
-  /// Fetch using the Http service (for compare)
+  /// Safe conversion helper: tries to convert a dynamic response into List<Map<String,dynamic>>
+  List<Map<String, dynamic>> _toListOfMap(dynamic resp) {
+    if (resp == null) return [];
+    try {
+      // If resp is Iterable of maps, normalize each entry to Map<String,dynamic>
+      if (resp is Iterable) {
+        return resp.map((e) {
+          if (e is Map) {
+            // ensure keys/values are of proper types
+            return Map<String, dynamic>.from(e as Map);
+          }
+          return <String, dynamic>{};
+        }).where((m) => m.isNotEmpty).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<void> fetchWithHttp() async {
     loading.value = true;
     error.value = '';
     lastFetchMethod.value = 'http';
     try {
-      // Expectation: httpService.fetchPopular() returns List<Map<String,dynamic>>
-      final respPopular = await httpService.fetchPopular(); // adapt method name to your service
+      final respPopular = await httpService.fetchPopular();
       final respSpecials = await httpService.fetchSpecials();
 
-      // defensive checks
-      if (respPopular is List) {
-        popular.assignAll(List<Map<String, dynamic>>.from(respPopular));
-      } else 
+      // Convert safely; if conversion fails we get empty lists rather than runtime errors
+      final List<Map<String, dynamic>> p = _toListOfMap(respPopular);
+      final List<Map<String, dynamic>> s = _toListOfMap(respSpecials);
 
-      if (respSpecials is List) {
-        specials.assignAll(List<Map<String, dynamic>>.from(respSpecials));
-      } else {
-        specials.clear();
-      }
+      popular.assignAll(p);
+      specials.assignAll(s);
     } catch (e, st) {
       error.value = 'Fetch (http) failed: ${e.toString()}';
       debugPrint('fetchWithHttp error: $e\n$st');
+      popular.clear();
+      specials.clear();
     } finally {
       loading.value = false;
     }
   }
 
-  /// Fetch using the Dio service (for performance experiments)
   Future<void> fetchWithDio() async {
     loading.value = true;
     error.value = '';
@@ -94,28 +105,25 @@ class MochiController extends GetxController {
       final respPopular = await dioService.fetchPopular();
       final respSpecials = await dioService.fetchSpecials();
 
-      if (respPopular is List) {
-        popular.assignAll(List<Map<String, dynamic>>.from(respPopular));
-      } else {
-        popular.clear();
-      }
+      final p = _toListOfMap(respPopular);
+      final s = _toListOfMap(respSpecials);
 
-      if (respSpecials is List) {
-        specials.assignAll(List<Map<String, dynamic>>.from(respSpecials));
-      } else {
-        specials.clear();
-      }
+      popular.assignAll(p);
+      specials.assignAll(s);
     } catch (e, st) {
       error.value = 'Fetch (dio) failed: ${e.toString()}';
       debugPrint('fetchWithDio error: $e\n$st');
+      popular.clear();
+      specials.clear();
     } finally {
       loading.value = false;
     }
   }
 
-  /// A convenience method to choose service by name
   Future<void> fetch({String method = 'http'}) async {
-    if (method == 'dio') return fetchWithDio();
+    if (method.toLowerCase() == 'dio') {
+      return fetchWithDio();
+    }
     return fetchWithHttp();
   }
 
@@ -124,19 +132,27 @@ class MochiController extends GetxController {
   // -------------------------
 
   void addToCartFromMap(Map<String, dynamic> mochi, {int amount = 1}) {
-    final id = (mochi['id'] as String?) ?? (mochi['name'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString());
+    final id = (mochi['id'] as String?) ??
+        (mochi['name'] as String?) ??
+        DateTime.now().millisecondsSinceEpoch.toString();
     final name = (mochi['name'] ?? mochi['title'])?.toString() ?? 'Mochi';
     final price = (mochi['price']?.toString() ?? '0');
     final emoji = (mochi['emoji']?.toString() ?? '🍡');
 
-    if (cart.containsKey(id)) {
-      cart[id]!.qty += amount;
-      cart.refresh();
-    } else {
-      cart[id] = CartItem(id: id, name: name, price: price, emoji: emoji, qty: amount);
-      cart.refresh();
-    }
-    Get.snackbar('Berhasil', '$name ditambahkan ke keranjang', snackPosition: SnackPosition.BOTTOM, duration: const Duration(milliseconds: 900));
+    // use update to modify or insert atomically
+    cart.update(
+      id,
+      (existing) {
+        existing.qty += amount;
+        return existing;
+      },
+      ifAbsent: () => CartItem(id: id, name: name, price: price, emoji: emoji, qty: amount),
+    );
+    // notify observers
+    cart.refresh();
+
+    Get.snackbar('Berhasil', '$name ditambahkan ke keranjang',
+        snackPosition: SnackPosition.BOTTOM, duration: const Duration(milliseconds: 900));
   }
 
   void removeFromCart(String id) {
@@ -147,10 +163,13 @@ class MochiController extends GetxController {
   }
 
   void changeQty(String id, int qty) {
-    if (cart.containsKey(id)) {
-      cart[id]!.qty = qty < 1 ? 1 : qty;
-      cart.refresh();
-    }
+    if (!cart.containsKey(id)) return;
+    final newQty = qty < 1 ? 1 : qty;
+    cart.update(id, (c) {
+      c.qty = newQty;
+      return c;
+    });
+    cart.refresh();
   }
 
   int cartTotalQty() => cart.values.fold(0, (sum, it) => sum + it.qty);
@@ -166,17 +185,17 @@ class MochiController extends GetxController {
     return total;
   }
 
+  String _thousandSeparator(String numeric) {
+    // Insert dot as thousand separator: "1234567" -> "1.234.567"
+    final s = numeric;
+    final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
+    return s.replaceAllMapped(reg, (m) => '.');
+  }
+
   String cartTotalPriceFormatted() {
     final t = cartTotalPriceAsInt();
-    // simple formatting: insert dot as thousand separator for indonesia-like display
-    final s = t.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      final pos = s.length - i;
-      buffer.write(s[i]);
-      if (pos > 1 && pos % 3 == 1) buffer.write('.');
-    }
-    return buffer.toString();
+    if (t == 0) return '0';
+    return _thousandSeparator(t.toString());
   }
 
   // -------------------------
@@ -186,15 +205,37 @@ class MochiController extends GetxController {
     cart.clear();
   }
 
-  /// If you want to populate demo data quickly (fallback)
+  /// Optional demo fallback data
   void populateDemoData() {
     popular.assignAll([
-      {"id": "strawberry", "name": "Strawberry", "price": "4.500", "emoji": "🍓", "bg": "#FFF0F5", "short": "Fresh strawberry wrapped in sweet mochi."},
-      {"id": "matcha", "name": "Matcha", "price": "5.000", "emoji": "🍵", "bg": "#F0FFF0", "short": "Earthy matcha cream inside soft mochi."},
+      {
+        "id": "strawberry",
+        "name": "Strawberry",
+        "price": "4.500",
+        "emoji": "🍓",
+        "bg": "#FFF0F5",
+        "short": "Fresh strawberry wrapped in sweet mochi."
+      },
+      {
+        "id": "matcha",
+        "name": "Matcha",
+        "price": "5.000",
+        "emoji": "🍵",
+        "bg": "#F0FFF0",
+        "short": "Earthy matcha cream inside soft mochi."
+      },
     ]);
 
     specials.assignAll([
-      {"id": "strawberry_daifuku", "title": "Strawberry Daifuku", "price": "5.000", "emoji": "🍡", "tags": ["Sweet", "Fruity", "Soft"], "description": "Delicious.", "reviews": []},
+      {
+        "id": "strawberry_daifuku",
+        "title": "Strawberry Daifuku",
+        "price": "5.000",
+        "emoji": "🍡",
+        "tags": ["Sweet", "Fruity", "Soft"],
+        "description": "Delicious.",
+        "reviews": []
+      },
     ]);
   }
 }

@@ -204,6 +204,13 @@ class _HomePageState extends State<HomePage> {
   String _lastFetchMethod = '';
   int? _lastFetchMs;
 
+  // --- async demo state
+  bool _demoRunning = false;
+  String _demoOutput = '';
+  String _demoMethod = '';
+  Duration? _demoDuration;
+  final List<String> _demoHistory = [];
+
   @override
   void dispose() {
     _specialPageController.dispose();
@@ -374,6 +381,152 @@ class _HomePageState extends State<HomePage> {
   }
   // ====== end added functions ======
 
+  // ----------------
+  // Async demo: Mock "API" calls
+  // ----------------
+
+  /// Mock API: fetch weather (simulate network delay)
+  Future<Map<String, dynamic>> _mockFetchWeather() async {
+    await Future.delayed(const Duration(milliseconds: 900)); // simulate network
+    return {
+      'temp': 28, // degree celsius
+      'condition': 'sunny',
+      'location': 'Malang'
+    };
+  }
+
+  /// Mock API: fetch recommendation based on weather
+  Future<String> _mockFetchRecommendation(Map<String, dynamic> weather) async {
+    await Future.delayed(const Duration(milliseconds: 450));
+    final temp = (weather['temp'] as num?)?.toDouble() ?? 0.0;
+    final condition = (weather['condition'] as String?) ?? '';
+    String rec;
+    if (temp >= 30) rec = 'Wear light clothing, hat, and sunglasses.';
+    else if (temp >= 24) rec = 'Light shirt and breathable pants are fine.';
+    else if (temp >= 18) rec = 'Bring a light jacket.';
+    else rec = 'Wear warm clothing and a jacket.';
+    if (condition.contains('rain')) rec += ' Don’t forget an umbrella.';
+    return rec;
+  }
+
+  /// Run using async/await
+  Future<void> _runAsyncAwaitDemo() async {
+    setState(() {
+      _demoRunning = true;
+      _demoMethod = 'async/await';
+      _demoOutput = 'Running (async/await)...';
+      _demoDuration = null;
+    });
+
+    final stopwatch = Stopwatch()..start();
+    try {
+      final weather = await _mockFetchWeather();
+      debugPrint('[async] weather: $weather');
+      final rec = await _mockFetchRecommendation(weather);
+      final elapsed = stopwatch.elapsed;
+      setState(() {
+        _demoOutput = 'Weather: ${weather['temp']}°C, ${weather['condition']}\nRecommendation: $rec';
+        _demoDuration = elapsed;
+        _demoHistory.insert(0, '[async] ${elapsed.inMilliseconds} ms — ${weather['temp']}°C → ${rec.split(".")[0]}');
+      });
+    } catch (e, st) {
+      setState(() {
+        _demoOutput = 'Error (async): ${e.toString()}';
+      });
+      debugPrint('async demo error: $e\n$st');
+    } finally {
+      stopwatch.stop();
+      setState(() => _demoRunning = false);
+    }
+  }
+
+  /// Run using callback chaining (then nested)
+  Future<void> _runCallbackChainingDemo() async {
+    setState(() {
+      _demoRunning = true;
+      _demoMethod = 'callback-chaining';
+      _demoOutput = 'Running (callback chaining)...';
+      _demoDuration = null;
+    });
+
+    final stopwatch = Stopwatch()..start();
+    // Start chain
+    _mockFetchWeather().then((weather) {
+      debugPrint('[callback] weather: $weather');
+      _mockFetchRecommendation(weather).then((rec) {
+        final elapsed = stopwatch.elapsed;
+        setState(() {
+          _demoOutput = 'Weather: ${weather['temp']}°C, ${weather['condition']}\nRecommendation: $rec';
+          _demoDuration = elapsed;
+          _demoHistory.insert(0, '[cb] ${elapsed.inMilliseconds} ms — ${weather['temp']}°C → ${rec.split(".")[0]}');
+        });
+      }).catchError((e, st) {
+        setState(() {
+          _demoOutput = 'Error (callback -> rec): ${e.toString()}';
+        });
+        debugPrint('callback->rec error: $e\n$st');
+      }).whenComplete(() {
+        stopwatch.stop();
+        setState(() => _demoRunning = false);
+      });
+    }).catchError((e, st) {
+      stopwatch.stop();
+      setState(() {
+        _demoRunning = false;
+        _demoOutput = 'Error (callback -> weather): ${e.toString()}';
+      });
+      debugPrint('callback->weather error: $e\n$st');
+    });
+  }
+
+  Widget _buildAsyncDemoCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(rSize(context, 12)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 6))]),
+      padding: EdgeInsets.all(rSize(context, 14)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Async Demo — Chained Requests', style: TextStyle(fontSize: rFont(context, 16), fontWeight: FontWeight.bold, color: const Color(0xFF8B4A58))),
+        SizedBox(height: rSize(context, 10)),
+        Text('Scenario: fetch weather → then fetch clothing recommendation. Compare async/await vs callback-chaining.', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade700)),
+        SizedBox(height: rSize(context, 12)),
+        Row(children: [
+          ElevatedButton(
+            onPressed: _demoRunning ? null : _runAsyncAwaitDemo,
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF85A7)),
+            child: Text('Run async/await', style: TextStyle(fontSize: rFont(context, 13))),
+          ),
+          SizedBox(width: rSize(context, 10)),
+          OutlinedButton(
+            onPressed: _demoRunning ? null : _runCallbackChainingDemo,
+            child: Text('Run callback chain', style: TextStyle(fontSize: rFont(context, 13))),
+          ),
+          SizedBox(width: rSize(context, 10)),
+          if (_demoRunning) SizedBox(width: rSize(context, 18), height: rSize(context, 18), child: CircularProgressIndicator(strokeWidth: 2))
+        ]),
+        SizedBox(height: rSize(context, 12)),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(rSize(context, 12)),
+          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(rSize(context, 8))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Method: ${_demoMethod.isEmpty ? '-' : _demoMethod}', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade800)),
+            SizedBox(height: rSize(context, 6)),
+            Text(_demoOutput.isEmpty ? 'No result yet' : _demoOutput, style: TextStyle(fontSize: rFont(context, 13))),
+            SizedBox(height: rSize(context, 8)),
+            if (_demoDuration != null) Text('Elapsed: ${_demoDuration!.inMilliseconds} ms', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade600)),
+          ]),
+        ),
+        SizedBox(height: rSize(context, 10)),
+        if (_demoHistory.isNotEmpty)
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('History (latest):', style: TextStyle(fontSize: rFont(context, 12), fontWeight: FontWeight.w600)),
+            SizedBox(height: rSize(context, 8)),
+            ..._demoHistory.take(5).map((s) => Text('• $s', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade700))).toList()
+          ]),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -491,7 +644,23 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: rSize(context, 12)),
 
                   if (screenWidth < 720)
-                    SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [for (var it in popularMochis) ...[HoverMochiCard(item: it, onTap: () => _showDetailSheet(it), onAddToCart: (m) => _addToCartFromMap(m)), SizedBox(width: rSize(context, 12))]]))
+                    SizedBox(
+                      height: rSize(context, 220),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: rSize(context, 8)),
+                        itemCount: popularMochis.length,
+                        separatorBuilder: (_, __) => SizedBox(width: rSize(context, 12)),
+                        itemBuilder: (context, idx) {
+                          final it = popularMochis[idx];
+                          return Padding(
+                            padding: EdgeInsets.symmetric(vertical: rSize(context, 6)),
+                            child: HoverMochiCard(item: it, onTap: () => _showDetailSheet(it), onAddToCart: (m) => _addToCartFromMap(m)),
+                          );
+                        },
+                        physics: const BouncingScrollPhysics(),
+                      ),
+                    )
                   else
                     GridView.builder(
                       shrinkWrap: true,
@@ -502,6 +671,11 @@ class _HomePageState extends State<HomePage> {
                     ),
 
                   SizedBox(height: rSize(context, 20)),
+
+                  // --- ASYNC DEMO CARD inserted here ---
+                  _buildAsyncDemoCard(context),
+                  SizedBox(height: rSize(context, 20)),
+
                   Text("Special Mochi", style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold, color: const Color(0xFF8B4A58))),
                   SizedBox(height: rSize(context, 12)),
 
