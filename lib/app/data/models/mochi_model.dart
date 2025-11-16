@@ -28,4 +28,16 @@ class Mochi {
       tags: (j['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'emoji': emoji,
+      'short': short,
+      'description': description,
+      'tags': tags,
+    };
+  }
 }
