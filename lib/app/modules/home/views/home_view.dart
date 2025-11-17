@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mochi/app/data/models/dummy_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
+import 'package:mochi/app/data/services/theme_toggle_service.dart'; 
 
 void main() {
   runApp(
@@ -159,6 +162,58 @@ class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
   @override
   State<HomeView> createState() => _HomeViewState();
+}
+
+class ThemeToggleService extends GetxService {
+  final _isDark = false.obs;
+
+  bool get isDark => _isDark.value;
+
+  Future<ThemeToggleService> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('isDarkTheme') ?? false;
+    _isDark.value = saved;
+
+    // apply theme saat startup
+    Get.changeThemeMode(saved ? ThemeMode.dark : ThemeMode.light);
+
+    return this;
+  }
+
+  Future<void> toggleTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final newVal = !_isDark.value;
+    _isDark.value = newVal;
+
+    await prefs.setBool('isDarkTheme', newVal);
+
+    Get.changeThemeMode(newVal ? ThemeMode.dark : ThemeMode.light);
+  }
+}
+
+@override
+Widget build(BuildContext context) {
+  final themeService = Get.find<ThemeToggleService>();
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Mochi'),
+      actions: [
+        Obx(() {
+          return IconButton(
+            tooltip: themeService.isDark ? 'Switch to Light' : 'Switch to Dark',
+            icon: Icon(
+              themeService.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              color: const Color(0xFF8B4A58),
+            ),
+            onPressed: () {
+              themeService.toggleTheme();
+            },
+          );
+        }),
+      ],
+    ),
+  );
 }
 
 class CartItem {

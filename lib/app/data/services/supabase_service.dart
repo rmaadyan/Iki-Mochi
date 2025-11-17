@@ -28,7 +28,7 @@ class SupabaseService extends GetxService {
       client = Supabase.instance.client;
 
       if (kDebugMode) {
-        debugPrint('Suapabse initialized with URL: $supabaseUrl');
+        debugPrint('Supabase initialized with URL: $supabaseUrl');
       }
 
       return this;
