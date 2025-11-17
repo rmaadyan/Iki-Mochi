@@ -1,22 +1,36 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'app/modules/mochi/bindings/mochi_binding.dart';
-import 'app/modules/mochi/views/home_page.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'app/routes/app_pages.dart';
+import 'app/data/services/supabase_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+
+  await Get.putAsync(() => SupabaseService().init());
+  runApp(const MochiApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MochiApp extends StatelessWidget {
+  const MochiApp({super.key});
+
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Mochi Restaurant',
       debugShowCheckedModeBanner: false,
-      initialBinding: MochiBinding(), // optional: register at app start
-      home: const HomePage(),
-      theme: ThemeData(fontFamily: 'Poppins', primarySwatch: Colors.pink),
+      theme: ThemeData(
+        fontFamily: 'Poppins',
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF85A7)),
+        scaffoldBackgroundColor: const Color(0xFFFFF7FC),
+      ),
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes
+
     );
   }
 }

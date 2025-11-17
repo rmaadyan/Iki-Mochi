@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:mochi/app/data/models/dummy_data.dart';
 
 void main() {
   runApp(
     MaterialApp(
-      home: const HomePage(),
+      home: const HomeView(),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Poppins',
@@ -153,11 +154,11 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
   }
 }
 
-/// ---------- HomePage ----------
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+/// ---------- Homeview ----------
+class HomeView extends StatefulWidget {
+  const HomeView({Key? key}) : super(key: key);
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomeView> createState() => _HomeViewState();
 }
 
 class CartItem {
@@ -169,47 +170,14 @@ class CartItem {
   CartItem({required this.id, required this.name, required this.price, required this.emoji, this.qty = 1});
 }
 
-class _HomePageState extends State<HomePage> {
-  final List<Map<String, dynamic>> popularMochis = [
-    {"id":"strawberry","name":"Strawberry","price":"4.500","emoji":"🍓","bg":const Color(0xFFFFF0F5),"short":"Fresh strawberry wrapped in sweet mochi."},
-    {"id":"matcha","name":"Matcha","price":"5.000","emoji":"🍵","bg":const Color(0xFFF0FFF0),"short":"Earthy matcha cream inside soft mochi."},
-    {"id":"choco","name":"Chocolate","price":"5.000","emoji":"🍫","bg":const Color(0xFFFFF8F0),"short":"Rich chocolate center — pure comfort."},
-    {"id":"mango","name":"Mango","price":"5.500","emoji":"🥭","bg":const Color(0xFFFFFBE6),"short":"Tropical mango filling — juicy and bright."},
-    {"id":"black_sesame","name":"Black Sesame","price":"5.200","emoji":"🌑","bg":const Color(0xFFF6F6F8),"short":"Nutty, slightly savory black sesame paste."},
-    {"id":"taro","name":"Taro","price":"5.300","emoji":"🍠","bg":const Color(0xFFFFF0F8),"short":"Creamy taro goodness inside chewy mochi."},
-    {"id":"yuzu","name":"Yuzu","price":"5.700","emoji":"🍋","bg":const Color(0xFFFFFCE6),"short":"Citrusy yuzu filling for a zesty surprise."},
-    {"id":"blueberry","name":"Blueberry","price":"5.400","emoji":"🫐","bg":const Color(0xFFF0F8FF),"short":"Sweet-tart blueberry jam wrapped in mochi."},
-  ];
-
-  final List<Map<String, dynamic>> specialMochis = [
-    {"id":"strawberry_daifuku","title":"Strawberry Daifuku","price":"5.000","emoji":"🍡","tags":["Sweet","Fruity","Soft"],"description":"Strawberry Daifuku features a fresh strawberry wrapped in red bean paste and soft mochi rice cake. Balanced and delightful.","reviews":[{"rating":5,"text":"Enak, teksturnya lembut banget!","author":"Ayu"}]},
-    {"id":"mochi_bites","title":"Mochi Bites","price":"6.000","emoji":"🟤","tags":["Crunchy","Assorted","Snack"],"description":"Bite-sized mochi with assorted fillings: chocolate, matcha cream, caramel. Perfect for sharing.","reviews":[{"rating":5,"text":"Sempurna untuk cemilan.","author":"Citra"}]} ,
-    {"id":"mochi_cheesecake","title":"Mochi Cheesecake","price":"8.500","emoji":"🧀","tags":["Creamy","Rich","Dessert"],"description":"Mochi Cheesecake: silky cheesecake filling wrapped in a thin mochi layer. A fusion dessert — creamy, slightly tangy, and delightfully chewy.","reviews":[{"rating":5,"text":"Kombinasi mochi + cheesecake bikin nagih!","author":"Ira"},{"rating":4,"text":"Lembut dan elegan, cocok untuk dessert spesial.","author":"Rian"}]},
-  ];
-
-  final List<Map<String, dynamic>> _categoryItems = [
-    {'label': 'All', 'active': true},
-    {'label': 'Sweet', 'active': false},
-    {'label': 'Fruity', 'active': false},
-    {'label': 'Ice', 'active': false},
-    {'label': 'Snack', 'active': false},
-  ];
+class _HomeViewState extends State<HomeView> {
+  // data sekarang diimpor dari dummy_data.dart
+  final List<Map<String, dynamic>> popularMochis = popularMochisData;
+  final List<Map<String, dynamic>> specialMochis = specialMochisData;
+  final List<Map<String, dynamic>> _categoryItems = categoryItemsData;
 
   final Map<String, CartItem> _cart = {};
   final PageController _specialPageController = PageController(viewportFraction: 0.98);
-  int _specialIndex = 0;
-
-  // --- fetch experiment state (added)
-  bool _isFetching = false;
-  String _lastFetchMethod = '';
-  int? _lastFetchMs;
-
-  // --- async demo state
-  bool _demoRunning = false;
-  String _demoOutput = '';
-  String _demoMethod = '';
-  Duration? _demoDuration;
-  final List<String> _demoHistory = [];
 
   @override
   void dispose() {
@@ -221,9 +189,18 @@ class _HomePageState extends State<HomePage> {
     final id = itemMap['id'] as String? ?? (itemMap['name'] as String);
     setState(() {
       if (_cart.containsKey(id)) _cart[id]!.qty += amount;
-      else _cart[id] = CartItem(id: id, name: itemMap['name'] ?? itemMap['title'], price: itemMap['price'].toString(), emoji: itemMap['emoji'] ?? '🍡', qty: amount);
+      else
+        _cart[id] = CartItem(
+          id: id,
+          name: itemMap['name'] ?? itemMap['title'],
+          price: itemMap['price'].toString(),
+          emoji: itemMap['emoji'] ?? '🍡',
+          qty: amount,
+        );
     });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${itemMap['name'] ?? itemMap['title']} ditambahkan ke keranjang."), duration: const Duration(milliseconds: 900)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${itemMap['name'] ?? itemMap['title']} ditambahkan ke keranjang."), duration: const Duration(milliseconds: 900)),
+    );
   }
 
   int _cartTotalQty() => _cart.values.fold(0, (s, e) => s + e.qty);
@@ -243,7 +220,13 @@ class _HomePageState extends State<HomePage> {
               child: Column(children: [
                 Container(height: 6, width: 60, margin: const EdgeInsets.only(top: 12), decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12))),
                 SizedBox(height: rSize(context, 8)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: rSize(context, 16)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Your Cart", style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold)), Text("${_cartTotalQty()} items", style: TextStyle(color: Colors.grey.shade600))])),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: rSize(context, 16)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text("Your Cart", style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold)),
+                    Text("${_cartTotalQty()} items", style: TextStyle(color: Colors.grey.shade600))
+                  ]),
+                ),
                 Expanded(
                   child: _cart.isEmpty
                       ? Center(child: Text("Keranjang kosong", style: TextStyle(fontSize: rFont(context, 14))))
@@ -268,13 +251,24 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: EdgeInsets.all(rSize(context, 16)),
                   child: Row(children: [
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Total", style: TextStyle(color: Colors.grey.shade600)), SizedBox(height: rSize(context, 6)), Text("Rp.${_cart.values.fold(0, (a, b) => a + (int.tryParse(b.price.replaceAll('.', '')) ?? 0) * b.qty)}", style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold))])),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text("Total", style: TextStyle(color: Colors.grey.shade600)),
+                        SizedBox(height: rSize(context, 6)),
+                        Text(
+                          "Rp.${_cart.values.fold(0, (a, b) => a + (int.tryParse(b.price.replaceAll('.', '')) ?? 0) * b.qty)}",
+                          style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold),
+                        )
+                      ]),
+                    ),
                     ElevatedButton(
-                      onPressed: _cart.isEmpty ? null : () {
-                        setState(() => _cart.clear());
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pesanan berhasil (demo).")));
-                      },
+                      onPressed: _cart.isEmpty
+                          ? null
+                          : () {
+                              setState(() => _cart.clear());
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pesanan berhasil (demo).")));
+                            },
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF85A7), padding: EdgeInsets.symmetric(vertical: rSize(context, 12), horizontal: rSize(context, 18))),
                       child: Text("Checkout", style: TextStyle(fontSize: rFont(context, 14))),
                     ),
@@ -301,12 +295,36 @@ class _HomePageState extends State<HomePage> {
         Widget content = Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxSheetWidth, maxHeight: maxSheetHeight),
-            child: Material(borderRadius: BorderRadius.circular(20), clipBehavior: Clip.antiAlias, child: MochiDetailSheet(mochi: mochi, initialTabIndex: reviewTab ? 1 : 0, onAddReview: (r) => setState(() => mochi['reviews'].add(r)), onAddToCart: (m) => _addToCartFromMap(m))),
+            child: Material(
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              child: MochiDetailSheet(
+                mochi: mochi,
+                initialTabIndex: reviewTab ? 1 : 0,
+                onAddReview: (r) => setState(() => mochi['reviews'].add(r)),
+                onAddToCart: (m) => _addToCartFromMap(m),
+              ),
+            ),
           ),
         );
 
         if (kIsWeb || screen.width >= 700) return Padding(padding: EdgeInsets.symmetric(vertical: rSize(context, 24), horizontal: rSize(context, 16)), child: content);
-        return DraggableScrollableSheet(expand: false, initialChildSize: 0.82, minChildSize: 0.5, maxChildSize: 0.95, builder: (context, controller) => Container(decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))), child: MochiDetailSheet(mochi: mochi, initialTabIndex: reviewTab ? 1 : 0, scrollController: controller, onAddReview: (r) => setState(() => mochi['reviews'].add(r)), onAddToCart: (m) => _addToCartFromMap(m))));
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.82,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, controller) => Container(
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            child: MochiDetailSheet(
+              mochi: mochi,
+              initialTabIndex: reviewTab ? 1 : 0,
+              scrollController: controller,
+              onAddReview: (r) => setState(() => mochi['reviews'].add(r)),
+              onAddToCart: (m) => _addToCartFromMap(m),
+            ),
+          ),
+        );
       },
     );
   }
@@ -341,192 +359,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ====== Added: simulated fetch methods for experimentation ======
-  Future<void> _fetchWithHttp() async {
-    setState(() { _isFetching = true; _lastFetchMethod = 'HTTP (simulated)'; _lastFetchMs = null; });
-    final sw = Stopwatch()..start();
-    try {
-      // Simulate network latency for HTTP (change to real http call if needed)
-      await Future.delayed(const Duration(milliseconds: 420));
-      sw.stop();
-      setState(() { _lastFetchMs = sw.elapsedMilliseconds; });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('HTTP fetch finished in ${_lastFetchMs} ms')));
-      debugPrint('HTTP simulated fetch took: ${_lastFetchMs} ms');
-    } catch (e) {
-      sw.stop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('HTTP fetch failed: $e')));
-      debugPrint('HTTP simulated fetch error: $e');
-    } finally {
-      setState(() { _isFetching = false; });
-    }
-  }
-
-  Future<void> _fetchWithDio() async {
-    setState(() { _isFetching = true; _lastFetchMethod = 'Dio (simulated)'; _lastFetchMs = null; });
-    final sw = Stopwatch()..start();
-    try {
-      // Simulate (slightly faster) network latency for Dio (change to real dio call if needed)
-      await Future.delayed(const Duration(milliseconds: 340));
-      sw.stop();
-      setState(() { _lastFetchMs = sw.elapsedMilliseconds; });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dio fetch finished in ${_lastFetchMs} ms')));
-      debugPrint('Dio simulated fetch took: ${_lastFetchMs} ms');
-    } catch (e) {
-      sw.stop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Dio fetch failed: $e')));
-      debugPrint('Dio simulated fetch error: $e');
-    } finally {
-      setState(() { _isFetching = false; });
-    }
-  }
-  // ====== end added functions ======
-
-  // ----------------
-  // Async demo: Mock "API" calls
-  // ----------------
-
-  /// Mock API: fetch weather (simulate network delay)
-  Future<Map<String, dynamic>> _mockFetchWeather() async {
-    await Future.delayed(const Duration(milliseconds: 900)); // simulate network
-    return {
-      'temp': 28, // degree celsius
-      'condition': 'sunny',
-      'location': 'Malang'
-    };
-  }
-
-  /// Mock API: fetch recommendation based on weather
-  Future<String> _mockFetchRecommendation(Map<String, dynamic> weather) async {
-    await Future.delayed(const Duration(milliseconds: 450));
-    final temp = (weather['temp'] as num?)?.toDouble() ?? 0.0;
-    final condition = (weather['condition'] as String?) ?? '';
-    String rec;
-    if (temp >= 30) rec = 'Wear light clothing, hat, and sunglasses.';
-    else if (temp >= 24) rec = 'Light shirt and breathable pants are fine.';
-    else if (temp >= 18) rec = 'Bring a light jacket.';
-    else rec = 'Wear warm clothing and a jacket.';
-    if (condition.contains('rain')) rec += ' Don’t forget an umbrella.';
-    return rec;
-  }
-
-  /// Run using async/await
-  Future<void> _runAsyncAwaitDemo() async {
-    setState(() {
-      _demoRunning = true;
-      _demoMethod = 'async/await';
-      _demoOutput = 'Running (async/await)...';
-      _demoDuration = null;
-    });
-
-    final stopwatch = Stopwatch()..start();
-    try {
-      final weather = await _mockFetchWeather();
-      debugPrint('[async] weather: $weather');
-      final rec = await _mockFetchRecommendation(weather);
-      final elapsed = stopwatch.elapsed;
-      setState(() {
-        _demoOutput = 'Weather: ${weather['temp']}°C, ${weather['condition']}\nRecommendation: $rec';
-        _demoDuration = elapsed;
-        _demoHistory.insert(0, '[async] ${elapsed.inMilliseconds} ms — ${weather['temp']}°C → ${rec.split(".")[0]}');
-      });
-    } catch (e, st) {
-      setState(() {
-        _demoOutput = 'Error (async): ${e.toString()}';
-      });
-      debugPrint('async demo error: $e\n$st');
-    } finally {
-      stopwatch.stop();
-      setState(() => _demoRunning = false);
-    }
-  }
-
-  /// Run using callback chaining (then nested)
-  Future<void> _runCallbackChainingDemo() async {
-    setState(() {
-      _demoRunning = true;
-      _demoMethod = 'callback-chaining';
-      _demoOutput = 'Running (callback chaining)...';
-      _demoDuration = null;
-    });
-
-    final stopwatch = Stopwatch()..start();
-    // Start chain
-    _mockFetchWeather().then((weather) {
-      debugPrint('[callback] weather: $weather');
-      _mockFetchRecommendation(weather).then((rec) {
-        final elapsed = stopwatch.elapsed;
-        setState(() {
-          _demoOutput = 'Weather: ${weather['temp']}°C, ${weather['condition']}\nRecommendation: $rec';
-          _demoDuration = elapsed;
-          _demoHistory.insert(0, '[cb] ${elapsed.inMilliseconds} ms — ${weather['temp']}°C → ${rec.split(".")[0]}');
-        });
-      }).catchError((e, st) {
-        setState(() {
-          _demoOutput = 'Error (callback -> rec): ${e.toString()}';
-        });
-        debugPrint('callback->rec error: $e\n$st');
-      }).whenComplete(() {
-        stopwatch.stop();
-        setState(() => _demoRunning = false);
-      });
-    }).catchError((e, st) {
-      stopwatch.stop();
-      setState(() {
-        _demoRunning = false;
-        _demoOutput = 'Error (callback -> weather): ${e.toString()}';
-      });
-      debugPrint('callback->weather error: $e\n$st');
-    });
-  }
-
-  Widget _buildAsyncDemoCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(rSize(context, 12)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 6))]),
-      padding: EdgeInsets.all(rSize(context, 14)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Async Demo — Chained Requests', style: TextStyle(fontSize: rFont(context, 16), fontWeight: FontWeight.bold, color: const Color(0xFF8B4A58))),
-        SizedBox(height: rSize(context, 10)),
-        Text('Scenario: fetch weather → then fetch clothing recommendation. Compare async/await vs callback-chaining.', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade700)),
-        SizedBox(height: rSize(context, 12)),
-        Row(children: [
-          ElevatedButton(
-            onPressed: _demoRunning ? null : _runAsyncAwaitDemo,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF85A7)),
-            child: Text('Run async/await', style: TextStyle(fontSize: rFont(context, 13))),
-          ),
-          SizedBox(width: rSize(context, 10)),
-          OutlinedButton(
-            onPressed: _demoRunning ? null : _runCallbackChainingDemo,
-            child: Text('Run callback chain', style: TextStyle(fontSize: rFont(context, 13))),
-          ),
-          SizedBox(width: rSize(context, 10)),
-          if (_demoRunning) SizedBox(width: rSize(context, 18), height: rSize(context, 18), child: CircularProgressIndicator(strokeWidth: 2))
-        ]),
-        SizedBox(height: rSize(context, 12)),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(rSize(context, 12)),
-          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(rSize(context, 8))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Method: ${_demoMethod.isEmpty ? '-' : _demoMethod}', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade800)),
-            SizedBox(height: rSize(context, 6)),
-            Text(_demoOutput.isEmpty ? 'No result yet' : _demoOutput, style: TextStyle(fontSize: rFont(context, 13))),
-            SizedBox(height: rSize(context, 8)),
-            if (_demoDuration != null) Text('Elapsed: ${_demoDuration!.inMilliseconds} ms', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade600)),
-          ]),
-        ),
-        SizedBox(height: rSize(context, 10)),
-        if (_demoHistory.isNotEmpty)
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('History (latest):', style: TextStyle(fontSize: rFont(context, 12), fontWeight: FontWeight.w600)),
-            SizedBox(height: rSize(context, 8)),
-            ..._demoHistory.take(5).map((s) => Text('• $s', style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade700))).toList()
-          ]),
-      ]),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -546,49 +378,16 @@ class _HomePageState extends State<HomePage> {
                 Stack(children: [
                   IconButton(icon: Icon(Icons.shopping_bag_outlined, color: const Color(0xFF8B4A58), size: rSize(context, 26)), onPressed: _openCartSheet),
                   if (_cartTotalQty() > 0)
-                    Positioned(right: rSize(context, 6), top: rSize(context, 6), child: Container(padding: EdgeInsets.all(rSize(context, 6)), decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(rSize(context, 12))), child: Text("${_cartTotalQty()}", style: TextStyle(color: Colors.white, fontSize: rFont(context, 12), fontWeight: FontWeight.bold)))),
+                    Positioned(
+                        right: rSize(context, 6),
+                        top: rSize(context, 6),
+                        child: Container(
+                            padding: EdgeInsets.all(rSize(context, 6)),
+                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(rSize(context, 12))),
+                            child: Text("${_cartTotalQty()}", style: TextStyle(color: Colors.white, fontSize: rFont(context, 12), fontWeight: FontWeight.bold)))),
                 ]),
               ]),
             ),
-
-            // ====== ADDED: Buttons for performance experiment ======
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: rSize(context, 16), vertical: rSize(context, 8)),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _isFetching ? null : _fetchWithHttp,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent),
-                        child: const Text("Fetch via HTTP"),
-                      ),
-                      SizedBox(width: rSize(context, 10)),
-                      ElevatedButton(
-                        onPressed: _isFetching ? null : _fetchWithDio,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
-                        child: const Text("Fetch via Dio"),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: rSize(context, 8)),
-                  // small status line
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isFetching) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                      SizedBox(width: rSize(context, 8)),
-                      Text(
-                        _lastFetchMethod.isEmpty ? 'Belum melakukan fetch' : 'Last: $_lastFetchMethod - ${_lastFetchMs != null ? '${_lastFetchMs} ms' : 'pending...'}',
-                        style: TextStyle(fontSize: rFont(context, 12), color: Colors.grey.shade700),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // ====== end added buttons ======
 
             Expanded(
               child: SingleChildScrollView(
@@ -605,7 +404,15 @@ class _HomePageState extends State<HomePage> {
                           Icon(Icons.search, color: const Color(0xFF8B4A58), size: rSize(context, 20)),
                           SizedBox(width: rSize(context, 10)),
                           Expanded(
-                            child: TextField(style: TextStyle(fontSize: rFont(context, 13)), decoration: InputDecoration(hintText: "Search mochi...", hintStyle: TextStyle(fontSize: rFont(context, 13), color: Colors.grey.shade500), border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: rSize(context, 20), vertical: rSize(context, 12)))),
+                            child: TextField(
+                              style: TextStyle(fontSize: rFont(context, 13)),
+                              decoration: InputDecoration(
+                                hintText: "Search mochi...",
+                                hintStyle: TextStyle(fontSize: rFont(context, 13), color: Colors.grey.shade500),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: rSize(context, 20), vertical: rSize(context, 12)),
+                              ),
+                            ),
                           ),
                           SizedBox(width: rSize(context, 12)),
                         ]),
@@ -670,10 +477,6 @@ class _HomePageState extends State<HomePage> {
                       itemBuilder: (_, idx) => HoverMochiCard(item: popularMochis[idx], onTap: () => _showDetailSheet(popularMochis[idx]), onAddToCart: (m) => _addToCartFromMap(m)),
                     ),
 
-                  SizedBox(height: rSize(context, 20)),
-
-                  // --- ASYNC DEMO CARD inserted here ---
-                  _buildAsyncDemoCard(context),
                   SizedBox(height: rSize(context, 20)),
 
                   Text("Special Mochi", style: TextStyle(fontSize: rFont(context, 18), fontWeight: FontWeight.bold, color: const Color(0xFF8B4A58))),
