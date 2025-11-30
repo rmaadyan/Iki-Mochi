@@ -51,7 +51,7 @@ class _LoginViewState extends State<LoginView> {
 
                   // Title
                   Text(
-                    'Welcome to Iki - Mochi',
+                    'Hi there !',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 30,

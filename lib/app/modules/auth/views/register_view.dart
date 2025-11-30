@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../../../core/values/app_strings.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -42,50 +44,42 @@ class _RegisterViewState extends State<RegisterView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // App Icon
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.person_add,
-                      size: 50,
-                      color: Colors.white,
+                    SizedBox(
+                    height: 200,
+                    child: Image.asset(
+                      'assets/images/mochi_logo.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(height: 32),
 
                   // Title
-                  Text(
-                    AppStrings.appName,
-                    style: Theme.of(context).textTheme.displayMedium,
+                  Column(
+                    children: [
+                      Text(
+                        'Welcome to',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Iki-Mochi',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     AppStrings.registerToGetStarted,
+                    textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 48),
                   // Email Field
                   Obx(
                     () => TextFormField(
