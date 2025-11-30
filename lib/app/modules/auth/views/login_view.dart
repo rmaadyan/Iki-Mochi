@@ -38,9 +38,8 @@ class _LoginViewState extends State<LoginView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  
                   // App Icon
-                    SizedBox(
+                  SizedBox(
                     height: 200,
                     child: Image.asset(
                       'assets/images/mochi_logo.png',
@@ -48,23 +47,22 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   ),
 
-
                   // Title
                   Text(
-                    'Hi there !',
+                    'Hi there sss!',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                    ),
                   ),
 
                   const SizedBox(height: 8),
                   Text(
                     'Please login to continue',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 16,
-                          color: Colors.grey[700],
-                        ),
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                    ),
                   ),
 
                   const SizedBox(height: 48),
