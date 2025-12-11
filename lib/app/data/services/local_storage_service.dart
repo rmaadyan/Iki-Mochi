@@ -6,17 +6,27 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/todo_model.dart';
+import '../models/notification_log_model.dart';
+
 class LocalStorageService extends GetxService {
   // box names
   static const String _settingsBox = 'settings_box';
   static const String _cartBox = 'cart_box';
   static const String _cacheBox = 'cache_box';
   static const String _sessionBox = 'session_box';
+  static const String todoBoxName = 'todo_box';
+  static const String notificationBoxName = 'notification_log_box';
 
   late Box<String> _settings;
   late Box<String> _cart; // store map id -> jsonString
   late Box<String> _cache; // store key -> jsonString
   late Box<String> _session; // store 'user' -> jsonString
+  late final Box<TodoModel> _todoBox;
+  late final Box<NotificationLogModel> _notificationBox;
+
+  Box<TodoModel> get todoBox => _todoBox;
+  Box<NotificationLogModel> get notificationBox => _notificationBox;
 
   /// Initialize Hive and open boxes. Call this via Get.putAsync in main().
   Future<LocalStorageService> init() async {
@@ -178,3 +188,4 @@ class LocalStorageService extends GetxService {
     return total;
   }
 }
+
