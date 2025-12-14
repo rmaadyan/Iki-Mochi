@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "288652331614",
+    "project_id": "iki-mochi-3bf3b",
+    "storage_bucket": "iki-mochi-3bf3b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288652331614:android:19b20b1a3509391bb6c2cf",
+        "android_client_info": {
+          "package_name": "com.example.mochi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfZLZsBYYdC_zxG9cpnQ7boJR9H-NiGnM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
