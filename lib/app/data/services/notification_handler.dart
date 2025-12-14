@@ -212,12 +212,12 @@ class NotificationHandler {
       importance: Importance.max,
       priority: Priority.high,
       ticker: 'ticker',
-      sound: RawResourceAndroidNotificationSound('scream'),
+      sound: RawResourceAndroidNotificationSound('hehe'),
       playSound: true,
     );
 
     const iOSPlatformChannelSpecifics = DarwinNotificationDetails(
-      sound: 'scream.mp3',
+      sound: 'hehe.mp3',
     );
 
     const platformChannelSpecifics = NotificationDetails(

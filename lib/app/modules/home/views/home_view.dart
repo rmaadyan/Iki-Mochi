@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:mochi/app/data/models/dummy_data.dart';
 import '../../../data/services/theme_toggle_service.dart';
 import 'package:get/get.dart';
-import '../controllers/home_controller.dart';
 import '../../../../app/routes/app_pages.dart';
 
 void main() {
@@ -231,10 +230,7 @@ class HomeView extends StatefulWidget {
 
 @override
 Widget build(BuildContext context) {
-  final screenWidth = MediaQuery.of(context).size.width;
-  final theme = Theme.of(context);
   final themeService = Get.find<ThemeToggleService>();
-  final bool isDark = theme.brightness == Brightness.dark;
 
   return Scaffold(
     appBar: AppBar(
@@ -779,7 +775,7 @@ class _HomeViewState extends State<HomeView> {
                             horizontal: rSize(context, 8),
                           ),
                           itemCount: _categoryItems.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               SizedBox(width: rSize(context, 8)),
                           itemBuilder: (context, index) {
                             final item = _categoryItems[index];
