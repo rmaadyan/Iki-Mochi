@@ -30,24 +30,24 @@ class HiveService implements MochiServiceContract {
     await _box.delete(index);
 
     @override
-Future<List<Mochi>> fetchPopular() async {
-  // Hive tidak punya konsep popular, fallback ke all
-  return getAll();
-}
+    Future<List<Mochi>> fetchPopular() async {
+      // Hive tidak punya konsep popular, fallback ke all
+      return getAll();
+    }
 
-@override
-Future<List<Mochi>> fetchSpecials() async {
-  // Belum ada implementasi khusus, sementara return all
-  return getAll();
-}
+    @override
+    Future<List<Mochi>> fetchSpecials() async {
+      // Belum ada implementasi khusus, sementara return all
+      return getAll();
+    }
   }
-  
+
   @override
   Future<List<Map<String, dynamic>>> fetchPopular() {
     // TODO: implement fetchPopular
     throw UnimplementedError();
   }
-  
+
   @override
   Future<List<Map<String, dynamic>>> fetchSpecials() {
     // TODO: implement fetchSpecials
