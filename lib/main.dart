@@ -1,53 +1,59 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'app/data/services/theme_toggle_service.dart';
 import 'app/data/services/supabase_service.dart';
+import 'app/data/services/local_notification_service.dart';
 import 'app/data/providers/auth_provider.dart';
-
 import 'app/routes/app_pages.dart';
+import 'app/core/app_lifecycle_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Get.putAsync(() => SupabaseService().init());
-  await Get.putAsync(() => ThemeToggleService().init());
+  // === INIT SERVICES ===
+  final supabase = await Get.putAsync<SupabaseService>(
+    () => SupabaseService().init(),
+  );
 
+  await Get.putAsync<LocalNotificationService>(
+    () => LocalNotificationService().init(),
+  );
+
+  Get.put<ThemeToggleService>(ThemeToggleService());
   Get.put<AuthProvider>(AuthProvider());
 
-  runApp(const MochiApp());
+  // 👁️ PASANG LIFECYCLE OBSERVER
+  WidgetsBinding.instance.addObserver(AppLifecycleObserver());
+
+  // 🔐 ROUTE AWAL (SELALU LOGIN KALAU SESSION SUDAH DIBERSIHKAN)
+  final String initialRoute = supabase.currentUser == null
+      ? Routes.LOGIN
+      : Routes.MAIN;
+
+  runApp(MochiApp(initialRoute: initialRoute));
 }
 
-
 class MochiApp extends StatelessWidget {
-  const MochiApp({super.key});
+  final String initialRoute;
 
-  ThemeData get _lightTheme => ThemeData(
-        brightness: Brightness.light,
-        primaryColor: const Color(0xFFFF85A7),
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: const Color(0xFFFFF7FC),
-      );
-
-  ThemeData get _darkTheme => ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFFFF85A7),
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: const Color(0xFF0F0F12),
-      );
+  const MochiApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
-    final ThemeToggleService themeService = Get.find();
+    final themeService = Get.find<ThemeToggleService>();
 
     return Obx(() {
       return GetMaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Mochi Restaurant',
-        theme: _lightTheme,
-        darkTheme: _darkTheme,
-        themeMode: themeService.isDark ? ThemeMode.dark : ThemeMode.light,
-        initialRoute: AppPages.INITIAL,
+        title: 'Iki Mochi',
+
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeService.isDark.value ? ThemeMode.dark : ThemeMode.light,
+
+        initialRoute: initialRoute,
         getPages: AppPages.routes,
       );
     });

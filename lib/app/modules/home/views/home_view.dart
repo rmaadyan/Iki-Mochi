@@ -5,6 +5,8 @@ import '../../../data/services/theme_toggle_service.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../../../../app/routes/app_pages.dart';
+import '../../../data/services/supabase_service.dart';
+import '../../../data/services/local_notification_service.dart';
 
 void main() {
   runApp(
@@ -56,6 +58,7 @@ class HoverMochiCard extends StatefulWidget {
 class _HoverMochiCardState extends State<HoverMochiCard> {
   bool _hover = false;
   bool _pressed = false;
+
   void _setHover(bool v) => setState(() => _hover = v);
   void _setPressed(bool v) => setState(() => _pressed = v);
 
@@ -63,10 +66,12 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final bool isDesktopLike = MediaQuery.of(context).size.width >= 700;
+
     final double scale = _pressed
         ? 0.985
         : (_hover && isDesktopLike ? 1.03 : 1.0);
     final double elevation = _hover && isDesktopLike ? 16 : 6;
+
     final double cardWidth = MediaQuery.of(context).size.width >= 1000
         ? rSize(context, 240)
         : rSize(context, 180);
@@ -108,7 +113,9 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ===== HEADER: EMOJI + NAME + PRICE + ADD =====
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: rSize(context, 56),
@@ -139,6 +146,7 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          SizedBox(height: rSize(context, 2)),
                           Text(
                             "Rp.${item['price']}",
                             style: TextStyle(
@@ -147,12 +155,49 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                               color: const Color(0xFFFF85A7),
                             ),
                           ),
+                          SizedBox(height: rSize(context, 6)),
+
+                          // ===== ADD BUTTON (SENDIRI DI ATAS) =====
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ElevatedButton.icon(
+                              onPressed: () => widget.onAddToCart(widget.item),
+                              icon: Icon(
+                                Icons.add_shopping_cart_outlined,
+                                size: rSize(context, 14),
+                              ),
+                              label: Text(
+                                "Add",
+                                style: TextStyle(
+                                  fontSize: rFont(context, 12),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF85A7),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: rSize(context, 10),
+                                  vertical: rSize(context, 4),
+                                ),
+                                minimumSize: Size(0, rSize(context, 30)),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    rSize(context, 10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: rSize(context, 8)),
+
+                SizedBox(height: rSize(context, 10)),
+
+                // ===== DESCRIPTION =====
                 Text(
                   item['short'] as String? ?? '',
                   style: TextStyle(
@@ -163,55 +208,28 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+
                 SizedBox(height: rSize(context, 12)),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: rSize(context, 38),
-                        child: ElevatedButton.icon(
-                          onPressed: () => widget.onAddToCart(widget.item),
-                          icon: Icon(
-                            Icons.add_shopping_cart_outlined,
-                            size: rSize(context, 16),
-                          ),
-                          label: Text(
-                            "Add",
-                            style: TextStyle(fontSize: rFont(context, 13)),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF85A7),
-                            padding: EdgeInsets.symmetric(
-                              vertical: rSize(context, 6),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                rSize(context, 10),
-                              ),
-                            ),
-                          ),
-                        ),
+
+                // ===== DETAILS BUTTON (FULL WIDTH) =====
+                SizedBox(
+                  width: double.infinity,
+                  height: rSize(context, 34),
+                  child: OutlinedButton(
+                    onPressed: widget.onTap,
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rSize(context, 10)),
                       ),
                     ),
-                    SizedBox(width: rSize(context, 8)),
-                    SizedBox(
-                      height: rSize(context, 38),
-                      child: OutlinedButton(
-                        onPressed: widget.onTap,
-                        child: Text(
-                          "Details",
-                          style: TextStyle(fontSize: rFont(context, 13)),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              rSize(context, 10),
-                            ),
-                          ),
-                        ),
+                    child: Text(
+                      "Details",
+                      style: TextStyle(
+                        fontSize: rFont(context, 12),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -229,41 +247,14 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-@override
-Widget build(BuildContext context) {
-  final screenWidth = MediaQuery.of(context).size.width;
-  final theme = Theme.of(context);
-  final themeService = Get.find<ThemeToggleService>();
-  final bool isDark = theme.brightness == Brightness.dark;
-
-  return Scaffold(
-    appBar: AppBar(
-      actions: [
-        Obx(() {
-          return IconButton(
-            tooltip: themeService.isDark ? 'Switch to Light' : 'Switch to Dark',
-            icon: Icon(
-              themeService.isDark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-              color: const Color.fromARGB(255, 248, 244, 245),
-            ),
-            onPressed: () {
-              themeService.toggleTheme();
-            },
-          );
-        }),
-      ],
-    ),
-  );
-}
-
+// ---------- Cart Model ----------
 class CartItem {
   final String id;
   final String name;
   final String price;
   final String emoji;
   int qty;
+
   CartItem({
     required this.id,
     required this.name,
@@ -274,10 +265,9 @@ class CartItem {
 }
 
 class _HomeViewState extends State<HomeView> {
-  // data sekarang diimpor dari dummy_data.dart
+  // data
   final List<Map<String, dynamic>> popularMochis = popularMochisData;
   final List<Map<String, dynamic>> specialMochis = specialMochisData;
-  final List<Map<String, dynamic>> _categoryItems = categoryItemsData;
 
   final Map<String, CartItem> _cart = {};
   final PageController _specialPageController = PageController(
@@ -290,12 +280,14 @@ class _HomeViewState extends State<HomeView> {
     super.dispose();
   }
 
+  // ================= CART =================
   void _addToCartFromMap(Map<String, dynamic> itemMap, {int amount = 1}) {
-    final id = itemMap['id'] as String? ?? (itemMap['name'] as String);
+    final id = itemMap['id'] ?? itemMap['name'];
+
     setState(() {
-      if (_cart.containsKey(id))
+      if (_cart.containsKey(id)) {
         _cart[id]!.qty += amount;
-      else
+      } else {
         _cart[id] = CartItem(
           id: id,
           name: itemMap['name'] ?? itemMap['title'],
@@ -303,7 +295,9 @@ class _HomeViewState extends State<HomeView> {
           emoji: itemMap['emoji'] ?? '🍡',
           qty: amount,
         );
+      }
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -314,7 +308,8 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  int _cartTotalQty() => _cart.values.fold(0, (s, e) => s + e.qty);
+  int _cartTotalQty() =>
+      _cart.values.fold<int>(0, (sum, item) => sum + item.qty);
 
   void _openCartSheet() {
     showModalBottomSheet(
@@ -448,24 +443,50 @@ class _HomeViewState extends State<HomeView> {
                         ElevatedButton(
                           onPressed: _cart.isEmpty
                               ? null
-                              : () {
+                              : () async {
+                                  final supabase = Get.find<SupabaseService>();
+                                  final notifier =
+                                      Get.find<LocalNotificationService>();
+
+                                  final items = _cart.values.map((e) {
+                                    return {
+                                      'id': e.id,
+                                      'name': e.name,
+                                      'price': int.parse(
+                                        e.price.replaceAll('.', ''),
+                                      ),
+                                      'qty': e.qty,
+                                      'emoji': e.emoji,
+                                    };
+                                  }).toList();
+
+                                  final total = items.fold<int>(
+                                    0,
+                                    (sum, i) =>
+                                        sum +
+                                        (i['price'] as int) * (i['qty'] as int),
+                                  );
+
+                                  await supabase.createOrder(
+                                    totalPrice: total,
+                                    items: items,
+                                  );
+
+                                  await notifier.showOrderSuccess();
+
                                   setState(() => _cart.clear());
                                   Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Pesanan berhasil (demo)."),
-                                    ),
+
+                                  Get.snackbar(
+                                    'Success',
+                                    'Pesanan berhasil disimpan',
+                                    snackPosition: SnackPosition.BOTTOM,
                                   );
                                 },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF85A7),
-                            padding: EdgeInsets.symmetric(
-                              vertical: rSize(context, 12),
-                              horizontal: rSize(context, 18),
-                            ),
-                          ),
+
+                          // 👇 WAJIB ADA & HARUS DI DALAM ElevatedButton
                           child: Text(
-                            "Checkout",
+                            'Checkout',
                             style: TextStyle(fontSize: rFont(context, 14)),
                           ),
                         ),
@@ -539,7 +560,6 @@ class _HomeViewState extends State<HomeView> {
             child: MochiDetailSheet(
               mochi: mochi,
               initialTabIndex: reviewTab ? 1 : 0,
-              scrollController: controller,
               onAddReview: (r) => setState(() => mochi['reviews'].add(r)),
               onAddToCart: (m) => _addToCartFromMap(m),
             ),
@@ -549,154 +569,138 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildCategoryChip(String text, bool isActive, {VoidCallback? onTap}) {
-    return Material(
-      color: isActive ? const Color(0xFFFF85A7) : Colors.white,
-      elevation: isActive ? 4 : 2,
-      shadowColor: Colors.black26,
-      borderRadius: BorderRadius.circular(rSize(context, 24)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(rSize(context, 24)),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: rSize(context, 18),
-            vertical: rSize(context, 10),
-          ),
-          constraints: BoxConstraints(minWidth: rSize(context, 72)),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: rFont(context, 12),
-                fontWeight: FontWeight.w500,
-                color: isActive ? Colors.white : Colors.grey.shade800,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final themeService = Get.find<ThemeToggleService>();
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          Obx(() {
-            return IconButton(
-              tooltip: themeService.isDark
-                  ? 'Switch to Light'
-                  : 'Switch to Dark',
-              icon: Icon(
-                themeService.isDark
-                    ? Icons.light_mode_outlined
-                    : Icons.dark_mode_outlined,
-                color: const Color.fromARGB(255, 39, 39, 39),
-              ),
-              onPressed: () {
-                themeService.toggleTheme();
-              },
-            );
-          }),
-        ],
-      ),
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final themeService = Get.find<ThemeToggleService>();
+
+    return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(-0.8, -0.8),
+            center: const Alignment(-0.8, -0.8),
             radius: 1.2,
-            colors: [Color(0xFFFFF7FC), Color(0xFFFFEEF6)],
+            colors: isDark
+                ? const [Color(0xFF2A1F24), Color(0xFF1E1E1E)]
+                : const [Color(0xFFFFF7FC), Color(0xFFFFEEF6)],
           ),
         ),
+
         child: SafeArea(
           child: Column(
             children: [
+              // ===== HEADER =====
               Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rSize(context, 16),
-                  vertical: rSize(context, 10),
+                padding: EdgeInsets.only(
+                  top: rSize(context, 12), // 👈 naik
+                  bottom: rSize(context, 16),
+                  left: rSize(context, 16),
+                  right: rSize(context, 16),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Text(
-                        "Choose\nYour Favorite Mochi",
-                        style: TextStyle(
-                          fontSize: rFont(context, 24),
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF8B4A58),
-                          height: 1.05,
-                        ),
+                    // TITLE
+                    Text(
+                      "Choose\nYour Favorite Mochi",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: rFont(context, 26),
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                        color: const Color(0xFF8B4A58),
                       ),
                     ),
-                    Stack(
-                      alignment: Alignment.center,
+
+                    SizedBox(height: rSize(context, 12)),
+
+                    // ICON ROW (SATU BARIS SEMUA)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Baris ikon (horizontal, tidak numpuk)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                        // CART + BADGE
+                        Stack(
+                          clipBehavior: Clip.none,
                           children: [
                             IconButton(
                               icon: Icon(
                                 Icons.shopping_bag_outlined,
-                                color: const Color(0xFF8B4A58),
                                 size: rSize(context, 26),
+                                color: const Color(0xFF8B4A58),
                               ),
                               onPressed: _openCartSheet,
                             ),
-                            IconButton(
-                              onPressed: _goToGpsLocation,
-                              icon: Icon(
-                                Icons.gps_fixed,
-                                color: const Color(0xFF8B4A58),
-                                size: rSize(context, 26),
+                            if (_cartTotalQty() > 0)
+                              Positioned(
+                                right: -4,
+                                top: -4,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rSize(context, 6),
+                                    vertical: rSize(context, 2),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
+                                    borderRadius: BorderRadius.circular(
+                                      rSize(context, 12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "${_cartTotalQty()}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: rFont(context, 11),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              onPressed: _goToNetworkLocation,
-                              icon: Icon(
-                                Icons.network_cell,
-                                color: const Color(0xFF8B4A58),
-                                size: rSize(context, 26),
-                              ),
-                            ),
                           ],
                         ),
 
-                        // Badge hanya menempel ke ikon cart
-                        if (_cartTotalQty() > 0)
-                          Positioned(
-                            right: rSize(
-                              context,
-                              38,
-                            ), // geser agar tepat di ikon cart
-                            top: rSize(context, 6),
-                            child: Container(
-                              padding: EdgeInsets.all(rSize(context, 6)),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent,
-                                borderRadius: BorderRadius.circular(
-                                  rSize(context, 12),
-                                ),
-                              ),
-                              child: Text(
-                                "${_cartTotalQty()}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: rFont(context, 12),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                        SizedBox(width: rSize(context, 12)),
+
+                        // GPS
+                        IconButton(
+                          icon: Icon(
+                            Icons.gps_fixed,
+                            size: rSize(context, 26),
+                            color: const Color(0xFF8B4A58),
                           ),
+                          onPressed: _goToGpsLocation,
+                        ),
+
+                        SizedBox(width: rSize(context, 12)),
+
+                        // NETWORK
+                        IconButton(
+                          icon: Icon(
+                            Icons.network_cell,
+                            size: rSize(context, 26),
+                            color: const Color(0xFF8B4A58),
+                          ),
+                          onPressed: _goToNetworkLocation,
+                        ),
+
+                        SizedBox(width: rSize(context, 12)),
+
+                        // THEME TOGGLE (SEJAJAR)
+                        Obx(() {
+                          return IconButton(
+                            tooltip: themeService.isDark.value
+                                ? 'Switch to Light'
+                                : 'Switch to Dark',
+                            icon: Icon(
+                              themeService.isDark.value
+                                  ? Icons.light_mode_outlined
+                                  : Icons.dark_mode_outlined,
+                              size: rSize(context, 26),
+                              color: const Color(0xFF8B4A58),
+                            ),
+                            onPressed: themeService.toggleTheme,
+                          );
+                        }),
                       ],
                     ),
                   ],
@@ -712,94 +716,7 @@ class _HomeViewState extends State<HomeView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width > 900
-                                ? 820
-                                : double.infinity,
-                          ),
-                          child: Container(
-                            height: rSize(context, 48),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(
-                                rSize(context, 24),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                SizedBox(width: rSize(context, 12)),
-                                Icon(
-                                  Icons.search,
-                                  color: const Color(0xFF8B4A58),
-                                  size: rSize(context, 20),
-                                ),
-                                SizedBox(width: rSize(context, 10)),
-                                Expanded(
-                                  child: TextField(
-                                    style: TextStyle(
-                                      fontSize: rFont(context, 13),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: "Search mochi...",
-                                      hintStyle: TextStyle(
-                                        fontSize: rFont(context, 13),
-                                        color: Colors.grey.shade500,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: rSize(context, 20),
-                                        vertical: rSize(context, 12),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: rSize(context, 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: rSize(context, 14)),
-
-                      SizedBox(
-                        height: rSize(context, 60),
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rSize(context, 8),
-                          ),
-                          itemCount: _categoryItems.length,
-                          separatorBuilder: (_, __) =>
-                              SizedBox(width: rSize(context, 8)),
-                          itemBuilder: (context, index) {
-                            final item = _categoryItems[index];
-                            return _buildCategoryChip(
-                              item['label'] as String,
-                              item['active'] as bool,
-                              onTap: () {
-                                setState(() {
-                                  for (var c in _categoryItems)
-                                    c['active'] = false;
-                                  _categoryItems[index]['active'] = true;
-                                });
-                              },
-                            );
-                          },
-                        ),
-                      ),
-
-                      SizedBox(height: rSize(context, 20)),
-
+                      // ===== POPULAR MOCHI =====
                       Text(
                         "Popular Mochi",
                         style: TextStyle(
@@ -856,8 +773,9 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ),
 
-                      SizedBox(height: rSize(context, 20)),
+                      SizedBox(height: rSize(context, 24)),
 
+                      // ===== SPECIAL MOCHI =====
                       Text(
                         "Special Mochi",
                         style: TextStyle(
@@ -1141,15 +1059,15 @@ class MochiDetailSheet extends StatefulWidget {
   final int initialTabIndex;
   final void Function(Map<String, dynamic>)? onAddReview;
   final void Function(Map<String, dynamic>)? onAddToCart;
-  final ScrollController? scrollController;
+
   const MochiDetailSheet({
     Key? key,
     required this.mochi,
     this.initialTabIndex = 0,
     this.onAddReview,
     this.onAddToCart,
-    this.scrollController,
   }) : super(key: key);
+
   @override
   State<MochiDetailSheet> createState() => _MochiDetailSheetState();
 }
@@ -1159,7 +1077,6 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
   late TabController _tabController;
   final TextEditingController _reviewTextController = TextEditingController();
   int _selectedRating = 5;
-  PageController? _reviewsPageController;
 
   @override
   void initState() {
@@ -1169,47 +1086,40 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
-    _reviewsPageController = PageController();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _reviewTextController.dispose();
-    _reviewsPageController?.dispose();
     super.dispose();
   }
 
   void _addReview() {
     final text = _reviewTextController.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Tulis review dulu.")));
-      return;
-    }
+    if (text.isEmpty) return;
+
     final newReview = {
       "rating": _selectedRating,
       "text": text,
       "author": "You",
     };
-    setState(() => widget.mochi['reviews'].add(newReview));
+
+    setState(() {
+      (widget.mochi['reviews'] as List?)?.add(newReview);
+    });
+
     widget.onAddReview?.call(newReview);
     _reviewTextController.clear();
     _selectedRating = 5;
     _tabController.animateTo(1);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Review ditambahkan.")));
   }
 
   Widget _buildReviewCard(Map r) {
-    final int rating = r['rating'] as int;
+    final int rating = r['rating'] ?? 0;
+
     return Card(
-      margin: EdgeInsets.symmetric(
-        horizontal: rSize(context, 12),
-        vertical: rSize(context, 10),
-      ),
+      margin: EdgeInsets.only(bottom: rSize(context, 10)),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(rSize(context, 12)),
       ),
@@ -1223,38 +1133,38 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
                 CircleAvatar(
                   backgroundColor: Colors.grey.shade200,
                   child: Text(
-                    (r['author'] as String).substring(0, 1).toUpperCase(),
+                    (r['author'] ?? '?')
+                        .toString()
+                        .substring(0, 1)
+                        .toUpperCase(),
                   ),
                 ),
-                SizedBox(width: rSize(context, 10)),
+                SizedBox(width: rSize(context, 8)),
                 Text(
-                  r['author'],
+                  r['author'] ?? '',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: rFont(context, 14),
+                    fontSize: rFont(context, 13),
                   ),
                 ),
                 const Spacer(),
                 Row(
-                  children: [
-                    for (int i = 0; i < rating; i++)
-                      Icon(
-                        Icons.star,
-                        size: rSize(context, 14),
-                        color: const Color(0xFFFFB6C1),
-                      ),
-                    for (int i = rating; i < 5; i++)
-                      Icon(
-                        Icons.star_border,
-                        size: rSize(context, 14),
-                        color: Colors.grey.shade300,
-                      ),
-                  ],
+                  children: List.generate(
+                    5,
+                    (i) => Icon(
+                      i < rating ? Icons.star : Icons.star_border,
+                      size: rSize(context, 14),
+                      color: const Color(0xFFFFB6C1),
+                    ),
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: rSize(context, 8)),
-            Text(r['text'], style: TextStyle(fontSize: rFont(context, 13))),
+            SizedBox(height: rSize(context, 6)),
+            Text(
+              r['text'] ?? '',
+              style: TextStyle(fontSize: rFont(context, 12)),
+            ),
           ],
         ),
       ),
@@ -1264,294 +1174,185 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
   @override
   Widget build(BuildContext context) {
     final mochi = widget.mochi;
-    final List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(
-      mochi['reviews'] as List,
-    );
-    final Size screen = MediaQuery.of(context).size;
-    final bool isWide = screen.width >= 900;
 
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Column(
-        children: [
-          SizedBox(height: rSize(context, 8)),
-          Container(
-            width: rSize(context, 40),
-            height: rSize(context, 4),
-            margin: EdgeInsets.only(top: rSize(context, 6)),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(rSize(context, 8)),
-            ),
+    final List<Map<String, dynamic>> reviews =
+        (mochi['reviews'] as List?)
+            ?.map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        [];
+
+    return Column(
+      children: [
+        SizedBox(height: rSize(context, 8)),
+        Container(
+          width: rSize(context, 40),
+          height: rSize(context, 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(rSize(context, 8)),
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: rSize(context, 16),
-              vertical: rSize(context, 8),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: isWide ? rSize(context, 140) : rSize(context, 100),
-                  height: isWide ? rSize(context, 140) : rSize(context, 100),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF0F5),
-                    borderRadius: BorderRadius.circular(rSize(context, 12)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      mochi['emoji'] as String,
-                      style: TextStyle(
-                        fontSize: rFont(context, isWide ? 40 : 32),
-                      ),
-                    ),
-                  ),
+        ),
+
+        // === HEADER ===
+        Padding(
+          padding: EdgeInsets.all(rSize(context, 16)),
+          child: Row(
+            children: [
+              Container(
+                width: rSize(context, 96),
+                height: rSize(context, 96),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F5),
+                  borderRadius: BorderRadius.circular(rSize(context, 12)),
                 ),
-                SizedBox(width: rSize(context, 12)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        mochi['title'] ?? mochi['name'] as String,
-                        style: TextStyle(
-                          fontSize: rFont(context, 18),
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF8B4A58),
-                        ),
-                      ),
-                      SizedBox(height: rSize(context, 6)),
-                      Text(
-                        "Rp.${mochi['price']}",
-                        style: TextStyle(
-                          fontSize: rFont(context, 14),
-                          color: const Color(0xFFFF85A7),
-                        ),
-                      ),
-                      SizedBox(height: rSize(context, 8)),
-                      Wrap(
-                        spacing: rSize(context, 8),
-                        children: ((mochi['tags'] ?? []) as List)
-                            .map<Widget>(
-                              (t) => Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: rSize(context, 10),
-                                  vertical: rSize(context, 6),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF0F5),
-                                  borderRadius: BorderRadius.circular(
-                                    rSize(context, 12),
-                                  ),
-                                ),
-                                child: Text(
-                                  t,
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 11),
-                                    color: const Color(0xFF8B4A58),
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ],
+                child: Center(
+                  child: Text(
+                    mochi['emoji'] ?? '🍡',
+                    style: TextStyle(fontSize: rFont(context, 32)),
                   ),
-                ),
-              ],
-            ),
-          ),
-          TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFFFF85A7),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFFFF85A7),
-            tabs: [
-              Tab(
-                child: Text(
-                  "Details",
-                  style: TextStyle(fontSize: rFont(context, 14)),
                 ),
               ),
-              Tab(
-                child: Text(
-                  "Reviews",
-                  style: TextStyle(fontSize: rFont(context, 14)),
+              SizedBox(width: rSize(context, 12)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mochi['title'] ?? mochi['name'] ?? '',
+                      style: TextStyle(
+                        fontSize: rFont(context, 18),
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8B4A58),
+                      ),
+                    ),
+                    SizedBox(height: rSize(context, 4)),
+                    Text(
+                      "Rp.${mochi['price']}",
+                      style: TextStyle(
+                        fontSize: rFont(context, 14),
+                        color: const Color(0xFFFF85A7),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+        ),
 
-          Expanded(
-            child: SafeArea(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  SingleChildScrollView(
-                    padding: EdgeInsets.all(rSize(context, 16)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          mochi['description'] ?? mochi['short'] ?? "",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: rFont(context, 13),
-                            height: 1.4,
+        // === TABS ===
+        TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFFFF85A7),
+          indicatorColor: const Color(0xFFFF85A7),
+          tabs: const [
+            Tab(text: "Details"),
+            Tab(text: "Reviews"),
+          ],
+        ),
+
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // ===== DETAILS TAB =====
+              Padding(
+                padding: EdgeInsets.all(rSize(context, 16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mochi['description'] ??
+                          mochi['short'] ??
+                          'No description available.',
+                      style: TextStyle(
+                        fontSize: rFont(context, 13),
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: rSize(context, 20)),
+                    SizedBox(
+                      width: double.infinity,
+                      height: rSize(context, 44),
+                      child: ElevatedButton(
+                        onPressed: () => widget.onAddToCart?.call(mochi),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF85A7),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              rSize(context, 22),
+                            ),
                           ),
                         ),
-                        SizedBox(height: rSize(context, 18)),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () =>
-                                    widget.onAddToCart?.call(mochi),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF85A7),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: rSize(context, 12),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Add to cart",
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 13),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: rSize(context, 12)),
-                            OutlinedButton(
-                              onPressed: () => _tabController.animateTo(1),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: rSize(context, 12),
-                                  horizontal: rSize(context, 10),
-                                ),
-                                child: Text(
-                                  "Reviews",
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 13),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          "Add to Cart",
+                          style: TextStyle(fontSize: rFont(context, 14)),
                         ),
-                        SizedBox(height: rSize(context, 12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ===== REVIEWS TAB =====
+              Column(
+                children: [
+                  Expanded(
+                    child: reviews.isEmpty
+                        ? Center(
+                            child: Text(
+                              "Belum ada review",
+                              style: TextStyle(fontSize: rFont(context, 13)),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.all(rSize(context, 12)),
+                            itemCount: reviews.length,
+                            itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
+                          ),
+                  ),
+
+                  // === INPUT REVIEW ===
+                  Padding(
+                    padding: EdgeInsets.all(rSize(context, 12)),
+                    child: Row(
+                      children: [
+                        DropdownButton<int>(
+                          value: _selectedRating,
+                          items: [5, 4, 3, 2, 1]
+                              .map(
+                                (r) => DropdownMenuItem(
+                                  value: r,
+                                  child: Text("$r ★"),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _selectedRating = v ?? 5),
+                        ),
+                        SizedBox(width: rSize(context, 8)),
+                        Expanded(
+                          child: TextField(
+                            controller: _reviewTextController,
+                            decoration: const InputDecoration(
+                              hintText: "Tulis review...",
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: _addReview,
+                        ),
                       ],
                     ),
                   ),
-
-                  Column(
-                    children: [
-                      if (reviews.isNotEmpty)
-                        SizedBox(
-                          height: isWide
-                              ? rSize(context, 180)
-                              : rSize(context, 140),
-                          child: PageView.builder(
-                            controller: _reviewsPageController,
-                            itemCount: reviews.length,
-                            itemBuilder: (_, idx) =>
-                                _buildReviewCard(reviews[idx]),
-                          ),
-                        ),
-
-                      Flexible(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rSize(context, 8),
-                          ),
-                          child: ListView.separated(
-                            itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
-                            separatorBuilder: (_, __) =>
-                                SizedBox(height: rSize(context, 8)),
-                            itemCount: reviews.length,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                          ),
-                        ),
-                      ),
-
-                      SafeArea(
-                        top: false,
-                        child: Padding(
-                          padding: EdgeInsets.all(rSize(context, 12)),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: rSize(context, 10),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(
-                                    rSize(context, 12),
-                                  ),
-                                ),
-                                child: DropdownButton<int>(
-                                  value: _selectedRating,
-                                  underline: const SizedBox(),
-                                  items: [5, 4, 3, 2, 1]
-                                      .map(
-                                        (r) => DropdownMenuItem(
-                                          value: r,
-                                          child: Text("$r ★"),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (v) =>
-                                      setState(() => _selectedRating = v ?? 5),
-                                ),
-                              ),
-                              SizedBox(width: rSize(context, 8)),
-                              Expanded(
-                                child: TextField(
-                                  controller: _reviewTextController,
-                                  decoration: InputDecoration(
-                                    hintText: "Tulis review...",
-                                    filled: true,
-                                    fillColor: Colors.grey.shade100,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: rSize(context, 12),
-                                      vertical: rSize(context, 10),
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        rSize(context, 12),
-                                      ),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: rSize(context, 8)),
-                              ElevatedButton(
-                                onPressed: _addReview,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF85A7),
-                                ),
-                                child: Text(
-                                  "Kirim",
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 14),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

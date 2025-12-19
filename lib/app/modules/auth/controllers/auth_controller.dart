@@ -1,27 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/services/supabase_service.dart';
 import '../../../core/values/app_strings.dart';
 import '../../../routes/app_pages.dart';
 
 class AuthController extends GetxController {
   final AuthProvider _authProvider = Get.find();
+  final SupabaseService _supabase = Get.find();
 
   // Observable variables
   final isLoading = false.obs;
 
-  // Login with email and password parameters
+  // ================= LIFECYCLE =================
+  @override
+  void onReady() {
+    super.onReady();
+
+    // 🔐 AUTH GUARD — CEK SESSION SAAT APP START / HOT RESTART
+    if (_supabase.isLoggedIn) {
+      Get.offAllNamed(Routes.MAIN);
+    }
+  }
+
+  // ================= LOGIN =================
   Future<void> login(String email, String password) async {
     isLoading.value = true;
     try {
       await _authProvider.login(email.trim(), password);
+
       Get.snackbar(
         'Success',
         AppStrings.loginSuccess,
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-      Get.offAllNamed(Routes.HOME);
+
+      // ⬅️ MASUK KE ROOT NAVBAR
+      Get.offAllNamed(Routes.MAIN);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -34,11 +51,12 @@ class AuthController extends GetxController {
     }
   }
 
-  // Register with email and password parameters
+  // ================= REGISTER =================
   Future<void> register(String email, String password) async {
     isLoading.value = true;
     try {
       await _authProvider.register(email.trim(), password);
+
       Get.snackbar(
         'Success',
         AppStrings.registerSuccess,
@@ -46,9 +64,9 @@ class AuthController extends GetxController {
         colorText: Colors.white,
         duration: const Duration(seconds: 4),
       );
-      // Ensure any snackbars are closed, then return to the existing login page
-      Get.closeAllSnackbars();
-      Get.until((route) => route.settings.name == Routes.LOGIN);
+
+      // ⬅️ BALIK KE LOGIN (AMAN)
+      Get.offAllNamed(Routes.LOGIN);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -61,7 +79,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // Logout
+  // ================= LOGOUT =================
   Future<void> logout() async {
     final confirm = await Get.dialog<bool>(
       AlertDialog(
@@ -83,21 +101,22 @@ class AuthController extends GetxController {
 
     if (confirm == true) {
       await _authProvider.logout();
+
+      // ⬅️ HAPUS SEMUA STACK + BALIK LOGIN
       Get.offAllNamed(Routes.LOGIN);
     }
   }
 
-  // Navigate to register
+  // ================= NAVIGATION =================
   void goToRegister() {
     Get.toNamed(Routes.REGISTER);
   }
 
-  // Navigate to login
   void goToLogin() {
-    Get.back();
+    Get.offAllNamed(Routes.LOGIN);
   }
 
-  // Email validator
+  // ================= VALIDATORS =================
   String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return AppStrings.pleaseEnterEmail;
@@ -108,7 +127,6 @@ class AuthController extends GetxController {
     return null;
   }
 
-  // Password validator
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return AppStrings.pleaseEnterPassword;
@@ -119,7 +137,6 @@ class AuthController extends GetxController {
     return null;
   }
 
-  // Confirm password validator (requires password for comparison)
   String? validateConfirmPassword(String? value, String password) {
     if (value == null || value.isEmpty) {
       return AppStrings.pleaseConfirmPassword;
