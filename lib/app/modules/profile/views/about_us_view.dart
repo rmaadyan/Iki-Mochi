@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../../core/values/app_colors.dart';
 
 class AboutUsView extends StatelessWidget {
   const AboutUsView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('About Us'), centerTitle: true),
-      body: Padding(
+      appBar: AppBar(
+        title: const Text('About Us'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -27,10 +32,9 @@ class AboutUsView extends StatelessWidget {
             // 🟣 APP NAME
             Text(
               'Iki Mochi',
-              style: TextStyle(
-                fontSize: 28,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: cs.primary,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
               ),
             ),
 
@@ -42,10 +46,9 @@ class AboutUsView extends StatelessWidget {
               child: Text(
                 'Iki Mochi adalah aplikasi pemesanan mochi dengan pendekatan desain yang sederhana, manis, dan fokus pada pengalaman pengguna.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.5,
+                  color: cs.onSurface.withOpacity(0.75),
                 ),
               ),
             ),
@@ -55,15 +58,11 @@ class AboutUsView extends StatelessWidget {
             // 🟣 CREDITS TITLE
             Align(
               alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Credits',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+              child: Text(
+                'Credits',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
                 ),
               ),
             ),
@@ -71,30 +70,59 @@ class AboutUsView extends StatelessWidget {
             const SizedBox(height: 12),
 
             // 🟣 CREDITS CARD
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      _CreditItem('Product & Developer', 'rmaadyn'),
-                      _CreditItem('UI / UX Design', 'Iki Mochi Team'),
-                      _CreditItem('Backend & API', 'Supabase'),
+            Card(
+              color: cs.surface,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    creditItem(context, 'Product & Developer', 'rmaadyn'),
+                    creditItem(context, 'UI / UX Design', 'Iki Mochi Team'),
+                    creditItem(context, 'Backend & API', 'Supabase'),
 
-                      Divider(height: 24),
+                    const Divider(height: 28),
 
-                      _CreditItem('Lead Developer','Muhammad Parama Adyan'),
-                      _CreditItem('Designer','Berliana Diva Rose'),
-                      _CreditItem('Project Manager','Haitsam Dzaki Dasiyanto'),
-                      _CreditItem('Marketing','Muhammad Rakan Syahputra'),
-                      _CreditItem('Backend Developer','Aglifah Alfarabi Basri'),
-                    ],
-                  ),
+                    Text(
+                      'Thanks to all members!',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    creditItem(
+                      context,
+                      'Lead Developer',
+                      'Muhammad Parama Adyan',
+                    ),
+                    creditItem(
+                      context,
+                      'Designer',
+                      'Berliana Diva Rose',
+                    ),
+                    creditItem(
+                      context,
+                      'Project Manager',
+                      'Haitsam Dzaki Dasiyanto',
+                    ),
+                    creditItem(
+                      context,
+                      'Marketing',
+                      'Muhammad Rakan Syahputra',
+                    ),
+                    creditItem(
+                      context,
+                      'Backend Developer',
+                      'Aglifah Alfarabi Basri',
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -105,26 +133,34 @@ class AboutUsView extends StatelessWidget {
   }
 }
 
-class _CreditRow extends StatelessWidget {
-  final String role;
-  final String name;
+/// 🔹 Credit Item (theme-aware)
+Widget creditItem(BuildContext context, String role, String name) {
+  final theme = Theme.of(context);
+  final cs = theme.colorScheme;
 
-  const _CreditRow({required this.role, required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.circle, size: 8, color: AppColors.primary),
-        const SizedBox(width: 8),
+        Icon(
+          Icons.circle,
+          size: 6,
+          color: cs.primary,
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: RichText(
             text: TextSpan(
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurface,
+              ),
               children: [
                 TextSpan(
                   text: '$role: ',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 TextSpan(text: name),
               ],
@@ -132,47 +168,6 @@ class _CreditRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CreditItem extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _CreditItem(this.title, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '• ',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 18,
-              height: 1.2,
-            ),
-          ),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-                children: [
-                  TextSpan(
-                    text: '$title: ',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  TextSpan(text: value),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }

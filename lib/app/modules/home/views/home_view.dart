@@ -577,6 +577,9 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double iconSize = isTablet ? 38 : 24;
+    final Color iconColor = AppColors.primary;
 
     final themeService = Get.find<ThemeToggleService>();
 
@@ -636,6 +639,7 @@ class _HomeViewState extends State<HomeView> {
                               clipBehavior: Clip.none,
                               children: [
                                 IconButton(
+                                  iconSize: iconSize,
                                   icon: Icon(
                                     Icons.shopping_bag_outlined,
                                     color: iconColor,
@@ -678,41 +682,35 @@ class _HomeViewState extends State<HomeView> {
 
                             // GPS
                             IconButton(
+                              iconSize: iconSize,
+                              icon: Icon(Icons.gps_fixed, color: iconColor),
                               onPressed: _goToGpsLocation,
-                              icon: Icon(
-                                Icons.gps_fixed,
-                                size: rSize(context, 26),
-                                color: iconColor,
-                              ),
                             ),
 
                             SizedBox(width: rSize(context, 12)),
 
                             // NETWORK
                             IconButton(
+                              iconSize: iconSize,
+                              icon: Icon(Icons.network_cell, color: iconColor),
                               onPressed: _goToNetworkLocation,
-                              icon: Icon(
-                                Icons.network_cell,
-                                size: rSize(context, 26),
-                                color: iconColor,
-                              ),
                             ),
 
                             SizedBox(width: rSize(context, 12)),
 
                             // THEME TOGGLE
-                            Obx(
-                              () => IconButton(
+                            Obx(() {
+                              return IconButton(
+                                iconSize: iconSize,
                                 icon: Icon(
                                   themeService.isDark.value
                                       ? Icons.light_mode_outlined
                                       : Icons.dark_mode_outlined,
-                                  size: rSize(context, 26),
                                   color: iconColor,
                                 ),
                                 onPressed: themeService.toggleTheme,
-                              ),
-                            ),
+                              );
+                            }),
                           ],
                         );
                       },
