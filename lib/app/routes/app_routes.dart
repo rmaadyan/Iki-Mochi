@@ -6,10 +6,8 @@ abstract class Routes {
   static const LOGIN = _Paths.LOGIN;
   static const REGISTER = _Paths.REGISTER;
 
-  // ROOT setelah login
   static const MAIN = _Paths.MAIN;
 
-  // children
   static const HOME = _Paths.HOME;
   static const PROFILE = _Paths.PROFILE;
 
@@ -18,13 +16,14 @@ abstract class Routes {
   static const NETWORK_LOCATION = _Paths.NETWORK_LOCATION;
 }
 
+
 abstract class _Paths {
   _Paths._();
 
   static const LOGIN = '/login';
   static const REGISTER = '/register';
 
-  static const MAIN = '/'; // root scaffold + bottom nav
+  static const MAIN = '/';
 
   static const HOME = '/home';
   static const PROFILE = '/profile';
@@ -33,3 +32,4 @@ abstract class _Paths {
   static const GPS_LOCATION = '/gps-location';
   static const NETWORK_LOCATION = '/network-location';
 }
+

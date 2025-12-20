@@ -38,10 +38,7 @@ class AppPages {
     ),
 
     // ===== MAIN (BOTTOM NAV ROOT) =====
-    GetPage(
-      name: Routes.MAIN,
-      page: () => const MainView(),
-    ),
+    GetPage(name: Routes.MAIN, page: () => const MainView()),
 
     // ===== HOME (CHILD PAGE) =====
     GetPage(

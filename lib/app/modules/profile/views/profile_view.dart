@@ -3,6 +3,7 @@ import '../../../routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/services/theme_toggle_service.dart';
+import '../../profile/views/about_us_view.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -83,14 +84,11 @@ class ProfileView extends StatelessWidget {
                       },
                     ),
                     _ProfileItem(
-                      icon: Icons.favorite_border,
-                      label: 'Favorite Mochi',
-                      onTap: () {},
-                    ),
-                    _ProfileItem(
-                      icon: Icons.settings_outlined,
-                      label: 'Settings',
-                      onTap: () {},
+                      icon: Icons.person_3_outlined,
+                      label: 'About us',
+                      onTap: () {
+                        Get.to(() => const AboutUsView());
+                      },
                     ),
                     _ProfileItem(
                       icon: Icons.logout,

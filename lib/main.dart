@@ -9,6 +9,7 @@ import 'app/data/providers/auth_provider.dart';
 import 'app/routes/app_pages.dart';
 import 'app/core/app_lifecycle_observer.dart';
 
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -23,6 +24,7 @@ Future<void> main() async {
 
   Get.put<ThemeToggleService>(ThemeToggleService());
   Get.put<AuthProvider>(AuthProvider());
+
 
   // 👁️ PASANG LIFECYCLE OBSERVER
   WidgetsBinding.instance.addObserver(AppLifecycleObserver());

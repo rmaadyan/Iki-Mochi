@@ -27,8 +27,6 @@ class HomeController extends GetxController {
       popular.assignAll(p);
       specials.assignAll(s);
     } catch (e, st) {
-      // jangan panik, cuma log
-      // print / debugPrint boleh dipakai
       debugPrint('failed loadData: $e\n$st');
     } finally {
       isLoading.value = false;

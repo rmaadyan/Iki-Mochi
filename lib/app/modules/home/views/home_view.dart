@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:mochi/app/data/models/dummy_data.dart';
 import '../../../data/services/theme_toggle_service.dart';
 import 'package:get/get.dart';
-import '../controllers/home_controller.dart';
 import '../../../../app/routes/app_pages.dart';
 import '../../../data/services/supabase_service.dart';
 import '../../../data/services/local_notification_service.dart';
+import '../../../core/values/app_colors.dart';
 
 void main() {
   runApp(
@@ -97,8 +97,8 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  (item['bg'] as Color).withOpacity(0.92),
-                  Colors.white.withOpacity(0.02),
+                  Colors.white.withOpacity(0.98),
+                  Colors.white.withOpacity(0.92),
                 ],
               ),
               borderRadius: BorderRadius.circular(rSize(context, 18)),
@@ -110,6 +110,7 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                 ),
               ],
             ),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -136,16 +137,24 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item['name'] as String,
-                            style: TextStyle(
-                              fontSize: rFont(context, 13),
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF8B4A58),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  item['name'] as String,
+                                  style: TextStyle(
+                                    fontSize: rFont(context, 13),
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF8B4A58),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
+
                           SizedBox(height: rSize(context, 2)),
                           Text(
                             "Rp.${item['price']}",
@@ -315,26 +324,37 @@ class _HomeViewState extends State<HomeView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) {
+      backgroundColor: Colors.transparent,
+      builder: (_) {
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.6,
           minChildSize: 0.35,
           maxChildSize: 0.95,
           builder: (context, controller) {
+            final theme = Theme.of(context);
+            final colors = theme.colorScheme;
+            final text = theme.textTheme;
+
             return Material(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
               child: Column(
                 children: [
+                  const SizedBox(height: 12),
                   Container(
-                    height: 6,
+                    height: 5,
                     width: 60,
-                    margin: const EdgeInsets.only(top: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: colors.onSurface.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  SizedBox(height: rSize(context, 8)),
+                  const SizedBox(height: 12),
+
+                  // ===== HEADER =====
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: rSize(context, 16),
@@ -342,26 +362,21 @@ class _HomeViewState extends State<HomeView> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Your Cart",
-                          style: TextStyle(
-                            fontSize: rFont(context, 18),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "${_cartTotalQty()} items",
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
+                        Text("Your Cart", style: text.titleLarge),
+                        Text("${_cartTotalQty()} items", style: text.bodySmall),
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 8),
+
+                  // ===== CART LIST =====
                   Expanded(
                     child: _cart.isEmpty
                         ? Center(
                             child: Text(
                               "Keranjang kosong",
-                              style: TextStyle(fontSize: rFont(context, 14)),
+                              style: text.bodyMedium,
                             ),
                           )
                         : ListView.builder(
@@ -369,47 +384,49 @@ class _HomeViewState extends State<HomeView> {
                             itemCount: _cart.length,
                             itemBuilder: (_, idx) {
                               final item = _cart.values.toList()[idx];
+
                               return ListTile(
-                                leading: CircleAvatar(child: Text(item.emoji)),
-                                title: Text(
-                                  item.name,
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 14),
+                                leading: CircleAvatar(
+                                  backgroundColor: colors.primary.withOpacity(
+                                    0.15,
                                   ),
+                                  child: Text(item.emoji),
                                 ),
+                                title: Text(item.name, style: text.bodyLarge),
                                 subtitle: Text(
-                                  "Rp.${item.price} x ${item.qty}",
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 13),
-                                  ),
+                                  "Rp.${item.price} × ${item.qty}",
+                                  style: text.bodySmall,
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
                                       icon: Icon(
-                                        Icons.remove_circle_outline,
-                                        size: rSize(context, 20),
+                                        item.qty == 1
+                                            ? Icons.delete_outline
+                                            : Icons.remove_circle_outline,
                                       ),
-                                      onPressed: () => setState(
-                                        () => item.qty = (item.qty - 1 <= 0
-                                            ? 1
-                                            : item.qty - 1),
-                                      ),
+                                      color: item.qty == 1
+                                          ? colors.error
+                                          : colors.onSurface,
+                                      onPressed: () {
+                                        setState(() {
+                                          if (item.qty <= 1) {
+                                            _cart.remove(item.id);
+                                          } else {
+                                            item.qty--;
+                                          }
+                                        });
+                                      },
                                     ),
-                                    Text(
-                                      '${item.qty}',
-                                      style: TextStyle(
-                                        fontSize: rFont(context, 14),
-                                      ),
-                                    ),
+                                    Text('${item.qty}', style: text.bodyLarge),
                                     IconButton(
-                                      icon: Icon(
+                                      icon: const Icon(
                                         Icons.add_circle_outline,
-                                        size: rSize(context, 20),
                                       ),
-                                      onPressed: () =>
-                                          setState(() => item.qty++),
+                                      onPressed: () {
+                                        setState(() => item.qty++);
+                                      },
                                     ),
                                   ],
                                 ),
@@ -417,6 +434,8 @@ class _HomeViewState extends State<HomeView> {
                             },
                           ),
                   ),
+
+                  // ===== FOOTER =====
                   Padding(
                     padding: EdgeInsets.all(rSize(context, 16)),
                     child: Row(
@@ -425,17 +444,11 @@ class _HomeViewState extends State<HomeView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text("Total", style: text.bodySmall),
+                              const SizedBox(height: 6),
                               Text(
-                                "Total",
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                              SizedBox(height: rSize(context, 6)),
-                              Text(
-                                "Rp.${_cart.values.fold(0, (a, b) => a + (int.tryParse(b.price.replaceAll('.', '')) ?? 0) * b.qty)}",
-                                style: TextStyle(
-                                  fontSize: rFont(context, 18),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                "Rp.${_cart.values.fold<int>(0, (sum, item) => sum + (int.tryParse(item.price.replaceAll('.', '')) ?? 0) * item.qty)}",
+                                style: text.titleLarge,
                               ),
                             ],
                           ),
@@ -448,17 +461,19 @@ class _HomeViewState extends State<HomeView> {
                                   final notifier =
                                       Get.find<LocalNotificationService>();
 
-                                  final items = _cart.values.map((e) {
-                                    return {
-                                      'id': e.id,
-                                      'name': e.name,
-                                      'price': int.parse(
-                                        e.price.replaceAll('.', ''),
-                                      ),
-                                      'qty': e.qty,
-                                      'emoji': e.emoji,
-                                    };
-                                  }).toList();
+                                  final items = _cart.values
+                                      .map(
+                                        (e) => {
+                                          'id': e.id,
+                                          'name': e.name,
+                                          'price': int.parse(
+                                            e.price.replaceAll('.', ''),
+                                          ),
+                                          'qty': e.qty,
+                                          'emoji': e.emoji,
+                                        },
+                                      )
+                                      .toList();
 
                                   final total = items.fold<int>(
                                     0,
@@ -476,19 +491,8 @@ class _HomeViewState extends State<HomeView> {
 
                                   setState(() => _cart.clear());
                                   Navigator.of(context).pop();
-
-                                  Get.snackbar(
-                                    'Success',
-                                    'Pesanan berhasil disimpan',
-                                    snackPosition: SnackPosition.BOTTOM,
-                                  );
                                 },
-
-                          // 👇 WAJIB ADA & HARUS DI DALAM ElevatedButton
-                          child: Text(
-                            'Checkout',
-                            style: TextStyle(fontSize: rFont(context, 14)),
-                          ),
+                          child: Text('Checkout', style: text.labelLarge),
                         ),
                       ],
                     ),
@@ -594,114 +598,124 @@ class _HomeViewState extends State<HomeView> {
               // ===== HEADER =====
               Padding(
                 padding: EdgeInsets.only(
-                  top: rSize(context, 12), // 👈 naik
+                  top: rSize(context, 12),
                   bottom: rSize(context, 16),
                   left: rSize(context, 16),
                   right: rSize(context, 16),
                 ),
                 child: Column(
                   children: [
-                    // TITLE
+                    // ===== TITLE =====
                     Text(
-                      "Choose\nYour Favorite Mochi",
-                      textAlign: TextAlign.center,
+                      "Pick Your\nFavorite Mochi",
+                      textAlign: TextAlign.center, // 🔥 INI WAJIB
                       style: TextStyle(
                         fontSize: rFont(context, 26),
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                        color: const Color(0xFF8B4A58),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                        height: 1.2, // opsional, biar jarak baris cakep
                       ),
                     ),
 
                     SizedBox(height: rSize(context, 12)),
 
-                    // ICON ROW (SATU BARIS SEMUA)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // CART + BADGE
-                        Stack(
-                          clipBehavior: Clip.none,
+                    // ===== ICON ROW =====
+                    Builder(
+                      builder: (context) {
+                        final iconColor = AppColors.primary.withOpacity(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 0.85
+                              : 1,
+                        );
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.shopping_bag_outlined,
-                                size: rSize(context, 26),
-                                color: const Color(0xFF8B4A58),
-                              ),
-                              onPressed: _openCartSheet,
-                            ),
-                            if (_cartTotalQty() > 0)
-                              Positioned(
-                                right: -4,
-                                top: -4,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rSize(context, 6),
-                                    vertical: rSize(context, 2),
+                            // CART + BADGE
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.shopping_bag_outlined,
+                                    color: iconColor,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent,
-                                    borderRadius: BorderRadius.circular(
-                                      rSize(context, 12),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "${_cartTotalQty()}",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: rFont(context, 11),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  onPressed: _openCartSheet,
                                 ),
-                              ),
-                          ],
-                        ),
 
-                        SizedBox(width: rSize(context, 12)),
+                                if (_cartTotalQty() > 0)
+                                  Positioned(
+                                    right: -4,
+                                    top: -4,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: rSize(context, 6),
+                                        vertical: rSize(context, 2),
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        borderRadius: BorderRadius.circular(
+                                          rSize(context, 12),
+                                        ),
+                                      ),
 
-                        // GPS
-                        IconButton(
-                          icon: Icon(
-                            Icons.gps_fixed,
-                            size: rSize(context, 26),
-                            color: const Color(0xFF8B4A58),
-                          ),
-                          onPressed: _goToGpsLocation,
-                        ),
-
-                        SizedBox(width: rSize(context, 12)),
-
-                        // NETWORK
-                        IconButton(
-                          icon: Icon(
-                            Icons.network_cell,
-                            size: rSize(context, 26),
-                            color: const Color(0xFF8B4A58),
-                          ),
-                          onPressed: _goToNetworkLocation,
-                        ),
-
-                        SizedBox(width: rSize(context, 12)),
-
-                        // THEME TOGGLE (SEJAJAR)
-                        Obx(() {
-                          return IconButton(
-                            tooltip: themeService.isDark.value
-                                ? 'Switch to Light'
-                                : 'Switch to Dark',
-                            icon: Icon(
-                              themeService.isDark.value
-                                  ? Icons.light_mode_outlined
-                                  : Icons.dark_mode_outlined,
-                              size: rSize(context, 26),
-                              color: const Color(0xFF8B4A58),
+                                      child: Text(
+                                        "${_cartTotalQty()}",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: rFont(context, 11),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                            onPressed: themeService.toggleTheme,
-                          );
-                        }),
-                      ],
+
+                            SizedBox(width: rSize(context, 12)),
+
+                            // GPS
+                            IconButton(
+                              onPressed: _goToGpsLocation,
+                              icon: Icon(
+                                Icons.gps_fixed,
+                                size: rSize(context, 26),
+                                color: iconColor,
+                              ),
+                            ),
+
+                            SizedBox(width: rSize(context, 12)),
+
+                            // NETWORK
+                            IconButton(
+                              onPressed: _goToNetworkLocation,
+                              icon: Icon(
+                                Icons.network_cell,
+                                size: rSize(context, 26),
+                                color: iconColor,
+                              ),
+                            ),
+
+                            SizedBox(width: rSize(context, 12)),
+
+                            // THEME TOGGLE
+                            Obx(
+                              () => IconButton(
+                                icon: Icon(
+                                  themeService.isDark.value
+                                      ? Icons.light_mode_outlined
+                                      : Icons.dark_mode_outlined,
+                                  size: rSize(context, 26),
+                                  color: iconColor,
+                                ),
+                                onPressed: themeService.toggleTheme,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -718,13 +732,13 @@ class _HomeViewState extends State<HomeView> {
                     children: [
                       // ===== POPULAR MOCHI =====
                       Text(
-                        "Popular Mochi",
-                        style: TextStyle(
-                          fontSize: rFont(context, 18),
+                        'Popular Mochi',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF8B4A58),
                         ),
                       ),
+
                       SizedBox(height: rSize(context, 12)),
 
                       if (screenWidth < 720)
@@ -777,13 +791,13 @@ class _HomeViewState extends State<HomeView> {
 
                       // ===== SPECIAL MOCHI =====
                       Text(
-                        "Special Mochi",
-                        style: TextStyle(
-                          fontSize: rFont(context, 18),
+                        'Special Mochi',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF8B4A58),
                         ),
                       ),
+
                       SizedBox(height: rSize(context, 12)),
 
                       // Vertical list of special mochi (scrolls with page)
@@ -1261,6 +1275,7 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // === DESCRIPTION ===
                     Text(
                       mochi['description'] ??
                           mochi['short'] ??
@@ -1271,7 +1286,59 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
                         height: 1.4,
                       ),
                     ),
+
                     SizedBox(height: rSize(context, 20)),
+
+                    // === INGREDIENTS ===
+                    if (mochi['ingredients'] != null) ...[
+                      Text(
+                        "Ingredients",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: rFont(context, 14),
+                        ),
+                      ),
+                      SizedBox(height: rSize(context, 8)),
+                      Wrap(
+                        spacing: rSize(context, 8),
+                        runSpacing: rSize(context, 6),
+                        children: (mochi['ingredients'] as List)
+                            .map<Widget>(
+                              (i) => Chip(
+                                label: Text(
+                                  i.toString(),
+                                  style: TextStyle(
+                                    fontSize: rFont(context, 11),
+                                  ),
+                                ),
+                                backgroundColor: const Color(0xFFFFF0F5),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      SizedBox(height: rSize(context, 16)),
+                    ],
+
+                    // === NUTRITION INFO ===
+                    Row(
+                      children: [
+                        if (mochi['calories'] != null)
+                          _InfoBadge(
+                            label: "${mochi['calories']} kcal",
+                            icon: Icons.local_fire_department,
+                          ),
+                        SizedBox(width: rSize(context, 12)),
+                        if (mochi['stock'] != null)
+                          _InfoBadge(
+                            label: "Stock: ${mochi['stock']}",
+                            icon: Icons.inventory_2,
+                          ),
+                      ],
+                    ),
+
+                    SizedBox(height: rSize(context, 24)),
+
+                    // === ADD TO CART ===
                     SizedBox(
                       width: double.infinity,
                       height: rSize(context, 44),
@@ -1353,6 +1420,34 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
           ),
         ),
       ],
+    );
+  }
+}
+
+class _InfoBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _InfoBadge({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rSize(context, 12),
+        vertical: rSize(context, 6),
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF0F5),
+        borderRadius: BorderRadius.circular(rSize(context, 20)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: rSize(context, 14), color: Colors.pinkAccent),
+          SizedBox(width: rSize(context, 6)),
+          Text(label, style: TextStyle(fontSize: rFont(context, 12))),
+        ],
+      ),
     );
   }
 }

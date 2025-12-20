@@ -46,8 +46,8 @@ class LocalNotificationService extends GetxService {
 
     await _plugin.show(
       0,
-      'Sip 🎉',
-      'Pesananmu Udah Tercatat',
+      'Order Up! 🎉',
+      'Sip, Pesananmu Udah Tercatat',
       notificationDetails,
     );
   }

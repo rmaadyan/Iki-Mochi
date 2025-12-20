@@ -49,7 +49,7 @@ class _LoginViewState extends State<LoginView> {
 
                   // Title
                   Text(
-                    'Hi there sss!',
+                    'Hi there !',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 30,
