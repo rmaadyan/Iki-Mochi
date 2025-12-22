@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/services/theme_toggle_service.dart';
 import '../../profile/views/about_us_view.dart';
+import '../../../core/utils/whatsapp_launcher.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -90,6 +91,21 @@ class ProfileView extends StatelessWidget {
                         Get.to(() => const AboutUsView());
                       },
                     ),
+
+                    _ProfileItem(
+                      icon: Icons.support_agent, // atau Icons.support_agent
+                      label: 'Contact Us',
+                      onTap: () {
+                        openWhatsApp(
+                          phone: '6281250337130',
+                          message:
+                              'Halo Admin Iki Mochi 👋\n'
+                              'Saya butuh bantuan terkait pesanan.\n\n'
+                              'Email: $email',
+                        );
+                      },
+                    ),
+
                     _ProfileItem(
                       icon: Icons.logout,
                       label: 'Logout',

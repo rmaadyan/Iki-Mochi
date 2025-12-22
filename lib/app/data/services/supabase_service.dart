@@ -9,53 +9,59 @@ class SupabaseService extends GetxService {
   // ================= INIT =================
   Future<SupabaseService> init() async {
     try {
-      if (kDebugMode) {
-        debugPrint('Loading .env file...');
-      }
-
       await dotenv.load(fileName: ".env");
 
       final supabaseUrl = dotenv.env['SUPABASE_URL'];
       final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
 
       if (supabaseUrl == null || supabaseAnonKey == null) {
-        throw Exception(
-          'Supabase URL or Anon Key is not set in the environment variables.',
-        );
+        throw Exception('Supabase env not configured');
       }
 
       await Supabase.initialize(
         url: supabaseUrl,
         anonKey: supabaseAnonKey,
+        authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
       );
 
       client = Supabase.instance.client;
 
       if (kDebugMode) {
-        debugPrint('Supabase initialized with URL: $supabaseUrl');
+        debugPrint('✅ Supabase initialized');
       }
 
       return this;
-    } catch (e) {
-      debugPrint('error initializing supabase: $e');
+    } catch (e, s) {
+      debugPrint('❌ Supabase init error: $e');
+      debugPrintStack(stackTrace: s);
       rethrow;
     }
   }
 
-  // ================= AUTH HELPERS =================
+  // ================= AUTH STATE =================
   User? get currentUser => client.auth.currentUser;
   Session? get currentSession => client.auth.currentSession;
-  Stream<AuthState> get authStateChanges =>
-      client.auth.onAuthStateChange;
 
+  /// 🔥 INI PENTING UNTUK RELEASE
+  Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
+
+  bool get isLoggedIn => currentSession != null;
+
+  // ================= AUTH ACTIONS =================
   Future<AuthResponse> signIn({
     required String email,
     required String password,
   }) async {
-    return await client.auth.signInWithPassword(
+    final res = await client.auth.signInWithPassword(
       email: email,
       password: password,
     );
+
+    if (res.user == null) {
+      throw Exception('Login gagal');
+    }
+
+    return res;
   }
 
   Future<AuthResponse> signUp({
@@ -74,55 +80,64 @@ class SupabaseService extends GetxService {
     await client.auth.signOut();
   }
 
-  bool get isLoggedIn => currentUser != null;
-
-  // ================= DATABASE HELPERS =================
+  // ================= DATABASE =================
   SupabaseQueryBuilder from(String table) => client.from(table);
   SupabaseStorageClient get storage => client.storage;
 
-  // ================= ORDER HELPERS =================
-
+  // ================= ORDER =================
   Future<String> createOrder({
     required int totalPrice,
     required List<Map<String, dynamic>> items,
+    required String paymentMethod,
   }) async {
-    final userId = currentUser!.id;
+    final user = currentUser;
+    if (user == null) {
+      throw Exception('User belum login');
+    }
 
-    final orderRes = await client
-        .from('orders')
-        .insert({
-          'user_id': userId,
-          'total_price': totalPrice,
-          'status': 'completed',
-        })
-        .select()
-        .single();
+    try {
+      final order = await client
+          .from('orders')
+          .insert({
+            'user_id': user.id,
+            'total_price': totalPrice,
+            'status': 'pending',
+            'payment_method': paymentMethod,
+          })
+          .select()
+          .single();
 
-    final orderId = orderRes['id'];
+      final String orderId = order['id'];
 
-    final orderItems = items.map((item) {
-      return {
-        'order_id': orderId,
-        'product_id': item['id'],
-        'product_name': item['name'],
-        'price': item['price'],
-        'qty': item['qty'],
-        'emoji': item['emoji'],
-      };
-    }).toList();
+      final orderItems = items.map((item) {
+        return {
+          'order_id': orderId,
+          'product_id': item['id'],
+          'product_name': item['name'],
+          'price': item['price'],
+          'qty': item['qty'],
+          'emoji': item['emoji'],
+        };
+      }).toList();
 
-    await client.from('order_items').insert(orderItems);
+      await client.from('order_items').insert(orderItems);
 
-    return orderId;
+      return orderId;
+    } catch (e, s) {
+      debugPrint('❌ createOrder error: $e');
+      debugPrintStack(stackTrace: s);
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getOrderHistory() async {
-    final userId = currentUser!.id;
+    final user = currentUser;
+    if (user == null) return [];
 
     final res = await client
         .from('orders')
         .select('*, order_items(*)')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('created_at', ascending: false);
 
     return List<Map<String, dynamic>>.from(res);

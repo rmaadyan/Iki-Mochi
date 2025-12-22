@@ -1,19 +1,16 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'app/data/services/theme_toggle_service.dart';
 import 'app/data/services/supabase_service.dart';
 import 'app/data/services/local_notification_service.dart';
+import 'app/data/services/theme_toggle_service.dart';
 import 'app/data/providers/auth_provider.dart';
 import 'app/routes/app_pages.dart';
-import 'app/core/app_lifecycle_observer.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // === INIT SERVICES ===
+  // ================= INIT SERVICES =================
   final supabase = await Get.putAsync<SupabaseService>(
     () => SupabaseService().init(),
   );
@@ -22,15 +19,24 @@ Future<void> main() async {
     () => LocalNotificationService().init(),
   );
 
-  Get.put<ThemeToggleService>(ThemeToggleService());
   Get.put<AuthProvider>(AuthProvider());
+  Get.put<ThemeToggleService>(ThemeToggleService());
 
+  // ================= AUTH STATE LISTENER =================
+  supabase.authStateChanges.listen((event) {
+    final session = event.session;
 
-  // 👁️ PASANG LIFECYCLE OBSERVER
-  WidgetsBinding.instance.addObserver(AppLifecycleObserver());
+    if (session == null) {
+      // logout / expired
+      Get.offAllNamed(Routes.LOGIN);
+    } else {
+      // login success / restore session
+      Get.offAllNamed(Routes.MAIN);
+    }
+  });
 
-  // 🔐 ROUTE AWAL (SELALU LOGIN KALAU SESSION SUDAH DIBERSIHKAN)
-  final String initialRoute = supabase.currentUser == null
+  // ================= INITIAL ROUTE =================
+  final String initialRoute = supabase.currentSession == null
       ? Routes.LOGIN
       : Routes.MAIN;
 
@@ -46,8 +52,8 @@ class MochiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeService = Get.find<ThemeToggleService>();
 
-    return Obx(() {
-      return GetMaterialApp(
+    return Obx(
+      () => GetMaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Iki Mochi',
 
@@ -57,7 +63,7 @@ class MochiApp extends StatelessWidget {
 
         initialRoute: initialRoute,
         getPages: AppPages.routes,
-      );
-    });
+      ),
+    );
   }
 }

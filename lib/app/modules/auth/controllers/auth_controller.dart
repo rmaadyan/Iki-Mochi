@@ -3,14 +3,15 @@ import 'package:get/get.dart';
 
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/services/supabase_service.dart';
+import '../../../data/services/local_notification_service.dart';
 import '../../../core/values/app_strings.dart';
 import '../../../routes/app_pages.dart';
 
 class AuthController extends GetxController {
   final AuthProvider _authProvider = Get.find();
   final SupabaseService _supabase = Get.find();
+  final LocalNotificationService _notifier = Get.find();
 
-  // Observable variables
   final isLoading = false.obs;
 
   // ================= LIFECYCLE =================
@@ -18,7 +19,7 @@ class AuthController extends GetxController {
   void onReady() {
     super.onReady();
 
-    // 🔐 AUTH GUARD — CEK SESSION SAAT APP START / HOT RESTART
+    // 🔐 AUTH GUARD
     if (_supabase.isLoggedIn) {
       Get.offAllNamed(Routes.MAIN);
     }
@@ -30,6 +31,13 @@ class AuthController extends GetxController {
     try {
       await _authProvider.login(email.trim(), password);
 
+      // 🔔 LOCAL NOTIFICATION (LOGIN)
+      final userName =
+          _supabase.currentUser?.email?.split('@').first ?? 'Pengguna';
+
+      await _notifier.showLoginSuccess(userName: userName);
+
+      // UI FEEDBACK
       Get.snackbar(
         'Success',
         AppStrings.loginSuccess,
@@ -65,7 +73,7 @@ class AuthController extends GetxController {
         duration: const Duration(seconds: 4),
       );
 
-      // ⬅️ BALIK KE LOGIN (AMAN)
+      // ⬅️ BALIK KE LOGIN
       Get.offAllNamed(Routes.LOGIN);
     } catch (e) {
       Get.snackbar(
@@ -100,9 +108,12 @@ class AuthController extends GetxController {
     );
 
     if (confirm == true) {
+      // 🔔 LOCAL NOTIFICATION (LOGOUT)
+      await _notifier.showLogoutSuccess();
+
       await _authProvider.logout();
 
-      // ⬅️ HAPUS SEMUA STACK + BALIK LOGIN
+      // ⬅️ CLEAR STACK
       Get.offAllNamed(Routes.LOGIN);
     }
   }

@@ -5,6 +5,8 @@ import '../../data/services/supabase_service.dart';
 import '../../routes/app_pages.dart';
 
 import '../home/views/home_view.dart';
+import '../order/views/order_list_view.dart';
+import '../order/controllers/order_controller.dart';
 import '../profile/views/profile_view.dart';
 
 class MainView extends StatefulWidget {
@@ -21,12 +23,18 @@ class _MainViewState extends State<MainView> {
 
   final List<Widget> _pages = const [
     HomeView(),
+    OrderListView(),
     ProfileView(),
   ];
 
   @override
   void initState() {
     super.initState();
+
+    // ✅ REGISTER CONTROLLER UNTUK TAB PESANAN
+    Get.put<OrderController>(OrderController(), permanent: true);
+
+    // ✅ SUPABASE SERVICE
     _supabase = Get.find<SupabaseService>();
 
     // 🔐 AUTH GUARD
@@ -39,12 +47,11 @@ class _MainViewState extends State<MainView> {
 
   @override
   Widget build(BuildContext context) {
-    // ⛔ Jangan render UI kalau belum login
     if (!_supabase.isLoggedIn) {
       return const SizedBox.shrink();
     }
 
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: IndexedStack(
@@ -54,17 +61,20 @@ class _MainViewState extends State<MainView> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor:
-            isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFFFF85A7),
         unselectedItemColor:
             isDark ? Colors.grey.shade400 : Colors.grey,
-        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: 'Pesanan',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

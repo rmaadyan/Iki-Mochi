@@ -8,14 +8,14 @@ abstract class Routes {
 
   static const MAIN = _Paths.MAIN;
 
-  static const HOME = _Paths.HOME;
   static const PROFILE = _Paths.PROFILE;
 
   static const LOCATION = _Paths.LOCATION;
   static const GPS_LOCATION = _Paths.GPS_LOCATION;
   static const NETWORK_LOCATION = _Paths.NETWORK_LOCATION;
-}
 
+  static const ORDER_DETAIL = _Paths.ORDER_DETAIL;
+}
 
 abstract class _Paths {
   _Paths._();
@@ -25,11 +25,11 @@ abstract class _Paths {
 
   static const MAIN = '/';
 
-  static const HOME = '/home';
   static const PROFILE = '/profile';
 
   static const LOCATION = '/location';
   static const GPS_LOCATION = '/gps-location';
   static const NETWORK_LOCATION = '/network-location';
-}
 
+  static const ORDER_DETAIL = '/order-detail';
+}

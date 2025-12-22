@@ -7,19 +7,7 @@ import '../../../../app/routes/app_pages.dart';
 import '../../../data/services/supabase_service.dart';
 import '../../../data/services/local_notification_service.dart';
 import '../../../core/values/app_colors.dart';
-
-void main() {
-  runApp(
-    MaterialApp(
-      home: const HomeView(),
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-    ),
-  );
-}
+import '../../order/controllers/order_controller.dart';
 
 /// ---------- Responsive helpers ----------
 double _clamp(double v, double min, double max) =>
@@ -274,6 +262,8 @@ class CartItem {
 }
 
 class _HomeViewState extends State<HomeView> {
+  String? _selectedPayment; // DEFAULT NULL, BUKAN 'ewallet
+
   // data
   final List<Map<String, dynamic>> popularMochis = popularMochisData;
   final List<Map<String, dynamic>> specialMochis = specialMochisData;
@@ -326,179 +316,264 @@ class _HomeViewState extends State<HomeView> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6,
-          minChildSize: 0.35,
-          maxChildSize: 0.95,
-          builder: (context, controller) {
-            final theme = Theme.of(context);
-            final colors = theme.colorScheme;
-            final text = theme.textTheme;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.6,
+              minChildSize: 0.35,
+              maxChildSize: 0.95,
+              builder: (context, controller) {
+                final theme = Theme.of(context);
+                final colors = theme.colorScheme;
+                final text = theme.textTheme;
 
-            return Material(
-              color: colors.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    height: 5,
-                    width: 60,
-                    decoration: BoxDecoration(
-                      color: colors.onSurface.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                final cartItems = _cart.values.toList();
+
+                return Material(
+                  color: colors.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
                   ),
-                  const SizedBox(height: 12),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 5,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: colors.onSurface.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
-                  // ===== HEADER =====
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rSize(context, 16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Your Cart", style: text.titleLarge),
-                        Text("${_cartTotalQty()} items", style: text.bodySmall),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // ===== CART LIST =====
-                  Expanded(
-                    child: _cart.isEmpty
-                        ? Center(
-                            child: Text(
-                              "Keranjang kosong",
-                              style: text.bodyMedium,
+                      // ===== HEADER =====
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rSize(context, 16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Your Cart", style: text.titleLarge),
+                            Text(
+                              "${_cartTotalQty()} items",
+                              style: text.bodySmall,
                             ),
-                          )
-                        : ListView.builder(
-                            controller: controller,
-                            itemCount: _cart.length,
-                            itemBuilder: (_, idx) {
-                              final item = _cart.values.toList()[idx];
+                          ],
+                        ),
+                      ),
 
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: colors.primary.withOpacity(
-                                    0.15,
-                                  ),
-                                  child: Text(item.emoji),
+                      const SizedBox(height: 8),
+
+                      // ===== CART LIST =====
+                      Expanded(
+                        child: cartItems.isEmpty
+                            ? Center(
+                                child: Text(
+                                  "Keranjang kosong",
+                                  style: text.bodyMedium,
                                 ),
-                                title: Text(item.name, style: text.bodyLarge),
-                                subtitle: Text(
-                                  "Rp.${item.price} × ${item.qty}",
-                                  style: text.bodySmall,
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        item.qty == 1
-                                            ? Icons.delete_outline
-                                            : Icons.remove_circle_outline,
-                                      ),
-                                      color: item.qty == 1
-                                          ? colors.error
-                                          : colors.onSurface,
-                                      onPressed: () {
+                              )
+                            : ListView.builder(
+                                controller: controller,
+                                itemCount: cartItems.length,
+                                itemBuilder: (_, idx) {
+                                  final item = cartItems[idx];
+
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: colors.primary
+                                          .withOpacity(0.15),
+                                      child: Text(item.emoji),
+                                    ),
+                                    title: Text(
+                                      item.name,
+                                      style: text.bodyLarge,
+                                    ),
+                                    subtitle: Text(
+                                      "Rp.${item.price} × ${item.qty}",
+                                      style: text.bodySmall,
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(
+                                            item.qty == 1
+                                                ? Icons.delete_outline
+                                                : Icons.remove_circle_outline,
+                                          ),
+                                          color: item.qty == 1
+                                              ? colors.error
+                                              : colors.onSurface,
+                                          onPressed: () {
+                                            setModalState(() {
+                                              if (item.qty <= 1) {
+                                                _cart.remove(item.id);
+                                              } else {
+                                                item.qty--;
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        Text(
+                                          '${item.qty}',
+                                          style: text.bodyLarge,
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.add_circle_outline,
+                                          ),
+                                          onPressed: () {
+                                            setModalState(() => item.qty++);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+
+                      // ===== FOOTER =====
+                      Padding(
+                        padding: EdgeInsets.all(rSize(context, 16)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // TOTAL
+                            Text("Total", style: text.bodySmall),
+                            const SizedBox(height: 6),
+                            Text(
+                              "Rp.${_cart.values.fold<int>(0, (sum, item) => sum + (int.tryParse(item.price.replaceAll('.', '')) ?? 0) * item.qty)}",
+                              style: text.titleLarge,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // ===== PAYMENT METHOD =====
+                            Text("Metode Pembayaran", style: text.titleMedium),
+                            const SizedBox(height: 8),
+
+                            RadioListTile<String>(
+                              value: 'ewallet',
+                              groupValue: _selectedPayment,
+                              onChanged: (v) =>
+                                  setModalState(() => _selectedPayment = v),
+                              title: const Text('E-Wallet (Dana)'),
+                              secondary: const Icon(
+                                Icons.account_balance_wallet_outlined,
+                              ),
+                            ),
+
+                            RadioListTile<String>(
+                              value: 'bank',
+                              groupValue: _selectedPayment,
+                              onChanged: (v) =>
+                                  setModalState(() => _selectedPayment = v),
+                              title: const Text('Transfer Bank (BNI)'),
+                              secondary: const Icon(
+                                Icons.account_balance_outlined,
+                              ),
+                            ),
+
+                            RadioListTile<String>(
+                              value: 'cod',
+                              groupValue: _selectedPayment,
+                              onChanged: (v) =>
+                                  setModalState(() => _selectedPayment = v),
+                              title: const Text('Bayar di Tempat (COD)'),
+                              secondary: const Icon(Icons.payments_outlined),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // ===== CHECKOUT BUTTON =====
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: cartItems.isEmpty
+                                    ? null
+                                    : () async {
+                                        if (_selectedPayment == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Pilih metode pembayaran terlebih dahulu',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+
+                                        final supabase =
+                                            Get.find<SupabaseService>();
+                                        final notifier =
+                                            Get.find<
+                                              LocalNotificationService
+                                            >();
+
+                                        final items = cartItems.map((e) {
+                                          return {
+                                            'id': e.id,
+                                            'name': e.name,
+                                            'price': int.parse(
+                                              e.price.replaceAll('.', ''),
+                                            ),
+                                            'qty': e.qty,
+                                            'emoji': e.emoji,
+                                          };
+                                        }).toList();
+
+                                        final total = items.fold<int>(
+                                          0,
+                                          (sum, i) =>
+                                              sum +
+                                              (i['price'] as int) *
+                                                  (i['qty'] as int),
+                                        );
+
+                                        await supabase.createOrder(
+                                          totalPrice: total,
+                                          items: items,
+                                          paymentMethod: _selectedPayment!,
+                                        );
+
+                                        // 🔥 REFRESH LIST PESANAN
+                                        Get.find<OrderController>()
+                                            .fetchOrders();
+
+                                        await notifier.showOrderSuccess();
+
+                                        setModalState(() {
+                                          _cart.clear();
+                                          _selectedPayment = null;
+                                        });
+
+                                        await notifier.showOrderSuccess();
+
+                                        Get.back(); // tutup bottom sheet SAJA
+
                                         setState(() {
-                                          if (item.qty <= 1) {
-                                            _cart.remove(item.id);
-                                          } else {
-                                            item.qty--;
-                                          }
+                                          _cart.clear();
+                                          _selectedPayment = null;
                                         });
                                       },
-                                    ),
-                                    Text('${item.qty}', style: text.bodyLarge),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.add_circle_outline,
-                                      ),
-                                      onPressed: () {
-                                        setState(() => item.qty++);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-
-                  // ===== FOOTER =====
-                  Padding(
-                    padding: EdgeInsets.all(rSize(context, 16)),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Total", style: text.bodySmall),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Rp.${_cart.values.fold<int>(0, (sum, item) => sum + (int.tryParse(item.price.replaceAll('.', '')) ?? 0) * item.qty)}",
-                                style: text.titleLarge,
+                                child: Text('Checkout', style: text.labelLarge),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        ElevatedButton(
-                          onPressed: _cart.isEmpty
-                              ? null
-                              : () async {
-                                  final supabase = Get.find<SupabaseService>();
-                                  final notifier =
-                                      Get.find<LocalNotificationService>();
-
-                                  final items = _cart.values
-                                      .map(
-                                        (e) => {
-                                          'id': e.id,
-                                          'name': e.name,
-                                          'price': int.parse(
-                                            e.price.replaceAll('.', ''),
-                                          ),
-                                          'qty': e.qty,
-                                          'emoji': e.emoji,
-                                        },
-                                      )
-                                      .toList();
-
-                                  final total = items.fold<int>(
-                                    0,
-                                    (sum, i) =>
-                                        sum +
-                                        (i['price'] as int) * (i['qty'] as int),
-                                  );
-
-                                  await supabase.createOrder(
-                                    totalPrice: total,
-                                    items: items,
-                                  );
-
-                                  await notifier.showOrderSuccess();
-
-                                  setState(() => _cart.clear());
-                                  Navigator.of(context).pop();
-                                },
-                          child: Text('Checkout', style: text.labelLarge),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -579,7 +654,6 @@ class _HomeViewState extends State<HomeView> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double iconSize = isTablet ? 38 : 24;
-    final Color iconColor = AppColors.primary;
 
     final themeService = Get.find<ThemeToggleService>();
 

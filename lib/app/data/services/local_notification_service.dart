@@ -6,49 +6,118 @@ class LocalNotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
+  // ================= INIT =================
   Future<LocalNotificationService> init() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-
     const initSettings = InitializationSettings(android: androidInit);
 
     await _plugin.initialize(initSettings);
 
-    // 🔔 MINTA IZIN NOTIFIKASI (ANDROID 13+)
     await _requestPermission();
+
+    // 🔥 WAJIB DIPANGGIL (INI YANG KEMARIN HILANG)
+    await _createAndroidChannels();
 
     return this;
   }
 
-  /// === REQUEST PERMISSION ===
+  // ================= PERMISSION =================
   Future<void> _requestPermission() async {
-    if (Platform.isAndroid) {
-      final androidPlugin = _plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
+    if (!Platform.isAndroid) return;
 
-      // Android 13+ (API 33) BUTUH REQUEST RUNTIME
-      await androidPlugin?.requestNotificationsPermission();
-    }
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    await androidPlugin?.requestNotificationsPermission();
   }
 
-  /// === SHOW NOTIFICATION ===
-  Future<void> showOrderSuccess() async {
-    const androidDetails = AndroidNotificationDetails(
-      'order_channel',
-      'Order Notification',
-      channelDescription: 'Notifikasi pesanan',
-      importance: Importance.max,
-      priority: Priority.high,
+  // ================= CREATE CHANNELS =================
+  Future<void> _createAndroidChannels() async {
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    if (androidPlugin == null) return;
+
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'login_channel_v3',
+        'Login Notification',
+        description: 'Notifikasi login user',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
+      ),
     );
 
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'logout_channel_v3',
+        'Logout Notification',
+        description: 'Notifikasi logout user',
+        importance: Importance.defaultImportance,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
+      ),
+    );
 
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'order_channel_v3',
+        'Order Notification',
+        description: 'Notifikasi pesanan berhasil',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
+      ),
+    );
+  }
+
+  // ================= LOGIN =================
+  Future<void> showLoginSuccess({required String userName}) async {
     await _plugin.show(
-      0,
+      10,
+      'Login Berhasil 🎉',
+      'Selamat datang, $userName',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'login_channel_v3',
+          'Login Notification',
+        ),
+      ),
+    );
+  }
+
+  // ================= LOGOUT =================
+  Future<void> showLogoutSuccess() async {
+    await _plugin.show(
+      11,
+      'Logout',
+      'Sampai jumpa lagi 👋',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'logout_channel_v3',
+          'Logout Notification',
+        ),
+      ),
+    );
+  }
+
+  // ================= ORDER =================
+  Future<void> showOrderSuccess() async {
+    await _plugin.show(
+      100,
       'Order Up! 🎉',
-      'Sip, Pesananmu Udah Tercatat',
-      notificationDetails,
+      'Pesanan kamu sudah tercatat',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'order_channel_v3',
+          'Order Notification',
+        ),
+      ),
     );
   }
 }
