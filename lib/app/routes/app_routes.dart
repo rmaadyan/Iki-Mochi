@@ -7,7 +7,6 @@ abstract class Routes {
   static const REGISTER = _Paths.REGISTER;
 
   static const MAIN = _Paths.MAIN;
-
   static const PROFILE = _Paths.PROFILE;
 
   static const LOCATION = _Paths.LOCATION;
@@ -15,6 +14,8 @@ abstract class Routes {
   static const NETWORK_LOCATION = _Paths.NETWORK_LOCATION;
 
   static const ORDER_DETAIL = _Paths.ORDER_DETAIL;
+
+  static const CHECKOUT = _Paths.CHECKOUT;
 }
 
 abstract class _Paths {
@@ -32,4 +33,5 @@ abstract class _Paths {
   static const NETWORK_LOCATION = '/network-location';
 
   static const ORDER_DETAIL = '/order-detail';
+  static const CHECKOUT = '/checkout';
 }

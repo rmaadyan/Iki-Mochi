@@ -1,13 +1,12 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:mochi/app/data/models/dummy_data.dart';
-import '../../../data/services/theme_toggle_service.dart';
 import 'package:get/get.dart';
-import '../../../../app/routes/app_pages.dart';
-import '../../../data/services/supabase_service.dart';
-import '../../../data/services/local_notification_service.dart';
+import 'package:mochi/app/ui/widgets/popular_mochi_card.dart';
+import 'package:mochi/app/data/models/dummy_data.dart';
+import '../../cart/controllers/cart_controller.dart';
+import '../controllers/home_controller.dart';
+import '../../../data/services/theme_toggle_service.dart';
 import '../../../core/values/app_colors.dart';
-import '../../order/controllers/order_controller.dart';
+import 'package:mochi/app/routes/app_pages.dart';
 
 /// ---------- Responsive helpers ----------
 double _clamp(double v, double min, double max) =>
@@ -28,16 +27,18 @@ double rFont(BuildContext context, double font) {
 }
 
 /// ---------- HoverMochiCard ----------
+
 class HoverMochiCard extends StatefulWidget {
   final Map<String, dynamic> item;
   final VoidCallback? onTap;
   final void Function(Map<String, dynamic> item) onAddToCart;
+
   const HoverMochiCard({
-    Key? key,
+    super.key,
     required this.item,
     this.onTap,
     required this.onAddToCart,
-  }) : super(key: key);
+  });
 
   @override
   State<HoverMochiCard> createState() => _HoverMochiCardState();
@@ -55,14 +56,31 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
     final item = widget.item;
     final bool isDesktopLike = MediaQuery.of(context).size.width >= 700;
 
+    // ================= SAFE DATA EXTRACTION =================
+    final String emoji = item['emoji']?.toString() ?? '🍡';
+
+    final String name =
+        item['name']?.toString() ??
+        item['title']?.toString() ??
+        'Unknown Mochi';
+
+    final String price = item['price']?.toString() ?? '0';
+
+    final String description =
+        item['short']?.toString() ??
+        item['description']?.toString() ??
+        'No description available';
+
+    // ================= UI EFFECT =================
     final double scale = _pressed
-        ? 0.985
+        ? 0.97
         : (_hover && isDesktopLike ? 1.03 : 1.0);
+
     final double elevation = _hover && isDesktopLike ? 16 : 6;
 
     final double cardWidth = MediaQuery.of(context).size.width >= 1000
-        ? rSize(context, 240)
-        : rSize(context, 180);
+        ? 240
+        : 180;
 
     return MouseRegion(
       onEnter: (_) => _setHover(true),
@@ -79,7 +97,7 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             width: cardWidth,
-            padding: EdgeInsets.all(rSize(context, 14)),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -89,7 +107,7 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                   Colors.white.withOpacity(0.92),
                 ],
               ),
-              borderRadius: BorderRadius.circular(rSize(context, 18)),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.06),
@@ -99,89 +117,78 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
               ],
             ),
 
+            // ================= CONTENT =================
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ===== HEADER: EMOJI + NAME + PRICE + ADD =====
+                // ===== HEADER =====
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: rSize(context, 56),
-                      height: rSize(context, 56),
+                      width: 56,
+                      height: 56,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white,
                       ),
                       child: Center(
                         child: Text(
-                          item['emoji'] as String,
-                          style: TextStyle(fontSize: rFont(context, 22)),
+                          emoji,
+                          style: const TextStyle(fontSize: 22),
                         ),
                       ),
                     ),
-                    SizedBox(width: rSize(context, 12)),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item['name'] as String,
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 13),
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF8B4A58),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          SizedBox(height: rSize(context, 2)),
                           Text(
-                            "Rp.${item['price']}",
-                            style: TextStyle(
-                              fontSize: rFont(context, 12),
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFFF85A7),
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF8B4A58),
                             ),
                           ),
-                          SizedBox(height: rSize(context, 6)),
-
-                          // ===== ADD BUTTON (SENDIRI DI ATAS) =====
+                          const SizedBox(height: 2),
+                          Text(
+                            "Rp.$price",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF85A7),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: ElevatedButton.icon(
                               onPressed: () => widget.onAddToCart(widget.item),
-                              icon: Icon(
+                              icon: const Icon(
                                 Icons.add_shopping_cart_outlined,
-                                size: rSize(context, 14),
+                                size: 14,
                               ),
-                              label: Text(
+                              label: const Text(
                                 "Add",
                                 style: TextStyle(
-                                  fontSize: rFont(context, 12),
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFF85A7),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: rSize(context, 10),
-                                  vertical: rSize(context, 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
                                 ),
-                                minimumSize: Size(0, rSize(context, 30)),
+                                minimumSize: const Size(0, 30),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    rSize(context, 10),
-                                  ),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                             ),
@@ -192,37 +199,39 @@ class _HoverMochiCardState extends State<HoverMochiCard> {
                   ],
                 ),
 
-                SizedBox(height: rSize(context, 10)),
+                const SizedBox(height: 10),
 
-                // ===== DESCRIPTION =====
-                Text(
-                  item['short'] as String? ?? '',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: rFont(context, 11),
-                    height: 1.2,
+                // ===== DESCRIPTION (FLEKSIBEL) =====
+                Expanded(
+                  child: Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 11,
+                      height: 1.2,
+                    ),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
 
-                SizedBox(height: rSize(context, 12)),
+                const SizedBox(height: 12),
 
-                // ===== DETAILS BUTTON (FULL WIDTH) =====
+                // ===== DETAILS BUTTON =====
                 SizedBox(
                   width: double.infinity,
-                  height: rSize(context, 34),
+                  height: 34,
                   child: OutlinedButton(
                     onPressed: widget.onTap,
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(rSize(context, 10)),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       "Details",
                       style: TextStyle(
-                        fontSize: rFont(context, 12),
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -262,13 +271,9 @@ class CartItem {
 }
 
 class _HomeViewState extends State<HomeView> {
-  String? _selectedPayment; // DEFAULT NULL, BUKAN 'ewallet
-
-  // data
-  final List<Map<String, dynamic>> popularMochis = popularMochisData;
-  final List<Map<String, dynamic>> specialMochis = specialMochisData;
-
-  final Map<String, CartItem> _cart = {};
+  // ================= CONTROLLERS =================
+  final HomeController controller = Get.find<HomeController>();
+  final CartController cartController = Get.find<CartController>();
   final PageController _specialPageController = PageController(
     viewportFraction: 0.98,
   );
@@ -279,368 +284,46 @@ class _HomeViewState extends State<HomeView> {
     super.dispose();
   }
 
-  // ================= CART =================
-  void _addToCartFromMap(Map<String, dynamic> itemMap, {int amount = 1}) {
-    final id = itemMap['id'] ?? itemMap['name'];
+  // ================= MOCHI DATA (SINGLE SOURCE) =================
+  final List<Map<String, dynamic>> allMochis = mochiDummyData;
 
-    setState(() {
-      if (_cart.containsKey(id)) {
-        _cart[id]!.qty += amount;
-      } else {
-        _cart[id] = CartItem(
-          id: id,
-          name: itemMap['name'] ?? itemMap['title'],
-          price: itemMap['price'].toString(),
-          emoji: itemMap['emoji'] ?? '🍡',
-          qty: amount,
-        );
-      }
-    });
+  late final List<Map<String, dynamic>> popularMochis;
+  late final List<Map<String, dynamic>> specialMochis;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "${itemMap['name'] ?? itemMap['title']} ditambahkan ke keranjang.",
-        ),
-        duration: const Duration(milliseconds: 900),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+
+    popularMochis = allMochis.where((m) => m['isPopular'] == true).toList();
+
+    specialMochis = allMochis.where((m) => m['isSpecial'] == true).toList();
   }
 
-  int _cartTotalQty() =>
-      _cart.values.fold<int>(0, (sum, item) => sum + item.qty);
-
-  void _openCartSheet() {
+  // ================= DETAIL SHEET =================
+  void _showDetailSheet(Map<String, dynamic> mochi, {bool reviewTab = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: 0.6,
-              minChildSize: 0.35,
-              maxChildSize: 0.95,
-              builder: (context, controller) {
-                final theme = Theme.of(context);
-                final colors = theme.colorScheme;
-                final text = theme.textTheme;
-
-                final cartItems = _cart.values.toList();
-
-                return Material(
-                  color: colors.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 5,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          color: colors.onSurface.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // ===== HEADER =====
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rSize(context, 16),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Your Cart", style: text.titleLarge),
-                            Text(
-                              "${_cartTotalQty()} items",
-                              style: text.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // ===== CART LIST =====
-                      Expanded(
-                        child: cartItems.isEmpty
-                            ? Center(
-                                child: Text(
-                                  "Keranjang kosong",
-                                  style: text.bodyMedium,
-                                ),
-                              )
-                            : ListView.builder(
-                                controller: controller,
-                                itemCount: cartItems.length,
-                                itemBuilder: (_, idx) {
-                                  final item = cartItems[idx];
-
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: colors.primary
-                                          .withOpacity(0.15),
-                                      child: Text(item.emoji),
-                                    ),
-                                    title: Text(
-                                      item.name,
-                                      style: text.bodyLarge,
-                                    ),
-                                    subtitle: Text(
-                                      "Rp.${item.price} × ${item.qty}",
-                                      style: text.bodySmall,
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(
-                                            item.qty == 1
-                                                ? Icons.delete_outline
-                                                : Icons.remove_circle_outline,
-                                          ),
-                                          color: item.qty == 1
-                                              ? colors.error
-                                              : colors.onSurface,
-                                          onPressed: () {
-                                            setModalState(() {
-                                              if (item.qty <= 1) {
-                                                _cart.remove(item.id);
-                                              } else {
-                                                item.qty--;
-                                              }
-                                            });
-                                          },
-                                        ),
-                                        Text(
-                                          '${item.qty}',
-                                          style: text.bodyLarge,
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.add_circle_outline,
-                                          ),
-                                          onPressed: () {
-                                            setModalState(() => item.qty++);
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-
-                      // ===== FOOTER =====
-                      Padding(
-                        padding: EdgeInsets.all(rSize(context, 16)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // TOTAL
-                            Text("Total", style: text.bodySmall),
-                            const SizedBox(height: 6),
-                            Text(
-                              "Rp.${_cart.values.fold<int>(0, (sum, item) => sum + (int.tryParse(item.price.replaceAll('.', '')) ?? 0) * item.qty)}",
-                              style: text.titleLarge,
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // ===== PAYMENT METHOD =====
-                            Text("Metode Pembayaran", style: text.titleMedium),
-                            const SizedBox(height: 8),
-
-                            RadioListTile<String>(
-                              value: 'ewallet',
-                              groupValue: _selectedPayment,
-                              onChanged: (v) =>
-                                  setModalState(() => _selectedPayment = v),
-                              title: const Text('E-Wallet (Dana)'),
-                              secondary: const Icon(
-                                Icons.account_balance_wallet_outlined,
-                              ),
-                            ),
-
-                            RadioListTile<String>(
-                              value: 'bank',
-                              groupValue: _selectedPayment,
-                              onChanged: (v) =>
-                                  setModalState(() => _selectedPayment = v),
-                              title: const Text('Transfer Bank (BNI)'),
-                              secondary: const Icon(
-                                Icons.account_balance_outlined,
-                              ),
-                            ),
-
-                            RadioListTile<String>(
-                              value: 'cod',
-                              groupValue: _selectedPayment,
-                              onChanged: (v) =>
-                                  setModalState(() => _selectedPayment = v),
-                              title: const Text('Bayar di Tempat (COD)'),
-                              secondary: const Icon(Icons.payments_outlined),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // ===== CHECKOUT BUTTON =====
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: cartItems.isEmpty
-                                    ? null
-                                    : () async {
-                                        if (_selectedPayment == null) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Pilih metode pembayaran terlebih dahulu',
-                                              ),
-                                            ),
-                                          );
-                                          return;
-                                        }
-
-                                        final supabase =
-                                            Get.find<SupabaseService>();
-                                        final notifier =
-                                            Get.find<
-                                              LocalNotificationService
-                                            >();
-
-                                        final items = cartItems.map((e) {
-                                          return {
-                                            'id': e.id,
-                                            'name': e.name,
-                                            'price': int.parse(
-                                              e.price.replaceAll('.', ''),
-                                            ),
-                                            'qty': e.qty,
-                                            'emoji': e.emoji,
-                                          };
-                                        }).toList();
-
-                                        final total = items.fold<int>(
-                                          0,
-                                          (sum, i) =>
-                                              sum +
-                                              (i['price'] as int) *
-                                                  (i['qty'] as int),
-                                        );
-
-                                        await supabase.createOrder(
-                                          totalPrice: total,
-                                          items: items,
-                                          paymentMethod: _selectedPayment!,
-                                        );
-
-                                        // 🔥 REFRESH LIST PESANAN
-                                        Get.find<OrderController>()
-                                            .fetchOrders();
-
-                                        await notifier.showOrderSuccess();
-
-                                        setModalState(() {
-                                          _cart.clear();
-                                          _selectedPayment = null;
-                                        });
-
-                                        await notifier.showOrderSuccess();
-
-                                        Get.back(); // tutup bottom sheet SAJA
-
-                                        setState(() {
-                                          _cart.clear();
-                                          _selectedPayment = null;
-                                        });
-                                      },
-                                child: Text('Checkout', style: text.labelLarge),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _goToGpsLocation() {
-    Get.toNamed(Routes.GPS_LOCATION);
-  }
-
-  void _goToNetworkLocation() {
-    Get.toNamed(Routes.NETWORK_LOCATION);
-  }
-
-  void _showDetailSheet(Map<String, dynamic> mochi, {bool reviewTab = false}) {
-    final Size screen = MediaQuery.of(context).size;
-    final double maxSheetHeight = screen.height * 0.85;
-    final double maxSheetWidth = screen.width > 900 ? 900 : screen.width * 0.96;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        Widget content = Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: maxSheetWidth,
-              maxHeight: maxSheetHeight,
-            ),
-            child: Material(
-              borderRadius: BorderRadius.circular(20),
-              clipBehavior: Clip.antiAlias,
-              child: MochiDetailSheet(
-                mochi: mochi,
-                initialTabIndex: reviewTab ? 1 : 0,
-                onAddReview: (r) => setState(() => mochi['reviews'].add(r)),
-                onAddToCart: (m) => _addToCartFromMap(m),
-              ),
-            ),
-          ),
-        );
-
-        if (kIsWeb || screen.width >= 700)
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: rSize(context, 24),
-              horizontal: rSize(context, 16),
-            ),
-            child: content,
-          );
         return DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.82,
+          initialChildSize: 0.85,
           minChildSize: 0.5,
           maxChildSize: 0.95,
-          builder: (context, controller) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
+          builder: (_, __) => Material(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: MochiDetailSheet(
               mochi: mochi,
               initialTabIndex: reviewTab ? 1 : 0,
-              onAddReview: (r) => setState(() => mochi['reviews'].add(r)),
-              onAddToCart: (m) => _addToCartFromMap(m),
+              onAddReview: (r) {
+                setState(() {
+                  mochi['reviews']?.add(r);
+                });
+              },
+              onAddToCart: (m) {
+                cartController.addItemFromMap(m);
+              },
             ),
           ),
         );
@@ -648,12 +331,13 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final double iconSize = isTablet ? 38 : 24;
+    final iconSize = isTablet ? 38.0 : 24.0;
 
     final themeService = Get.find<ThemeToggleService>();
 
@@ -668,141 +352,113 @@ class _HomeViewState extends State<HomeView> {
                 : const [Color(0xFFFFF7FC), Color(0xFFFFEEF6)],
           ),
         ),
-
         child: SafeArea(
-          child: Column(
-            children: [
-              // ===== HEADER =====
-              Padding(
-                padding: EdgeInsets.only(
-                  top: rSize(context, 12),
-                  bottom: rSize(context, 16),
-                  left: rSize(context, 16),
-                  right: rSize(context, 16),
-                ),
-                child: Column(
+          child: CustomScrollView(
+            slivers: [
+              // ================= HEADER =================
+              SliverAppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                expandedHeight: rSize(context, 140),
+                automaticallyImplyLeading: false,
+                flexibleSpace: Stack(
                   children: [
-                    // ===== TITLE =====
-                    Text(
-                      "Pick Your\nFavorite Mochi",
-                      textAlign: TextAlign.center, // 🔥 INI WAJIB
-                      style: TextStyle(
-                        fontSize: rFont(context, 26),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                        height: 1.2, // opsional, biar jarak baris cakep
+                    // CART ICON
+                    Positioned(
+                      top: rSize(context, 8),
+                      left: rSize(context, 8),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          IconButton(
+                            iconSize: iconSize,
+                            icon: Icon(
+                              Icons.shopping_bag_outlined,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () => Get.toNamed(Routes.CHECKOUT),
+                          ),
+                          Obx(() {
+                            if (cartController.totalQty == 0) {
+                              return const SizedBox();
+                            }
+                            return Positioned(
+                              right: -4,
+                              top: -4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${cartController.totalQty}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
                       ),
                     ),
 
-                    SizedBox(height: rSize(context, 12)),
-
-                    // ===== ICON ROW =====
-                    Builder(
-                      builder: (context) {
-                        final iconColor = AppColors.primary.withOpacity(
-                          Theme.of(context).brightness == Brightness.dark
-                              ? 0.85
-                              : 1,
+                    // THEME TOGGLE
+                    Positioned(
+                      top: rSize(context, 8),
+                      right: rSize(context, 8),
+                      child: Obx(() {
+                        return IconButton(
+                          iconSize: iconSize,
+                          icon: Icon(
+                            themeService.isDark.value
+                                ? Icons.light_mode_outlined
+                                : Icons.dark_mode_outlined,
+                            color: AppColors.primary,
+                          ),
+                          onPressed: themeService.toggleTheme,
                         );
+                      }),
+                    ),
 
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // CART + BADGE
-                            Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                IconButton(
-                                  iconSize: iconSize,
-                                  icon: Icon(
-                                    Icons.shopping_bag_outlined,
-                                    color: iconColor,
-                                  ),
-                                  onPressed: _openCartSheet,
-                                ),
-
-                                if (_cartTotalQty() > 0)
-                                  Positioned(
-                                    right: -4,
-                                    top: -4,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: rSize(context, 6),
-                                        vertical: rSize(context, 2),
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        borderRadius: BorderRadius.circular(
-                                          rSize(context, 12),
-                                        ),
-                                      ),
-
-                                      child: Text(
-                                        "${_cartTotalQty()}",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: rFont(context, 11),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-
-                            SizedBox(width: rSize(context, 12)),
-
-                            // GPS
-                            IconButton(
-                              iconSize: iconSize,
-                              icon: Icon(Icons.gps_fixed, color: iconColor),
-                              onPressed: _goToGpsLocation,
-                            ),
-
-                            SizedBox(width: rSize(context, 12)),
-
-                            // NETWORK
-                            IconButton(
-                              iconSize: iconSize,
-                              icon: Icon(Icons.network_cell, color: iconColor),
-                              onPressed: _goToNetworkLocation,
-                            ),
-
-                            SizedBox(width: rSize(context, 12)),
-
-                            // THEME TOGGLE
-                            Obx(() {
-                              return IconButton(
-                                iconSize: iconSize,
-                                icon: Icon(
-                                  themeService.isDark.value
-                                      ? Icons.light_mode_outlined
-                                      : Icons.dark_mode_outlined,
-                                  color: iconColor,
-                                ),
-                                onPressed: themeService.toggleTheme,
-                              );
-                            }),
-                          ],
-                        );
-                      },
+                    // TITLE
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: rSize(context, 16)),
+                        child: Text(
+                          "Pick Your\nFavorite Mochi",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: rFont(context, 26),
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
 
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rSize(context, 16),
-                    vertical: rSize(context, 12),
-                  ),
+              // ================= CONTENT =================
+              SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rSize(context, 16),
+                  vertical: rSize(context, 12),
+                ),
+                sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ===== POPULAR MOCHI =====
+                      // ===== POPULAR =====
                       Text(
                         'Popular Mochi',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -810,58 +466,74 @@ class _HomeViewState extends State<HomeView> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       SizedBox(height: rSize(context, 12)),
 
-                      if (screenWidth < 720)
-                        SizedBox(
-                          height: rSize(context, 220),
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: rSize(context, 8),
+                      Obx(() {
+                        // 1️⃣ loading
+                        if (controller.isLoading.value) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: CircularProgressIndicator(),
                             ),
-                            itemCount: popularMochis.length,
-                            separatorBuilder: (_, __) =>
-                                SizedBox(width: rSize(context, 12)),
-                            itemBuilder: (context, idx) {
-                              final it = popularMochis[idx];
-                              return Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: rSize(context, 6),
-                                ),
-                                child: HoverMochiCard(
-                                  item: it,
-                                  onTap: () => _showDetailSheet(it),
-                                  onAddToCart: (m) => _addToCartFromMap(m),
-                                ),
-                              );
-                            },
-                            physics: const BouncingScrollPhysics(),
-                          ),
-                        )
-                      else
-                        GridView.builder(
+                          );
+                        }
+
+                        final items = controller.popularMochis;
+
+                        // 2️⃣ empty state (INI PENTING)
+                        if (items.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Text(
+                              'Popular mochi belum tersedia',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          );
+                        }
+
+                        // 3️⃣ grid normal
+                        final crossAxisCount = screenWidth >= 1100
+                            ? 4
+                            : screenWidth >= 720
+                            ? 3
+                            : 2;
+
+                        return GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: screenWidth >= 1100 ? 4 : 3,
-                                crossAxisSpacing: rSize(context, 12),
-                                mainAxisSpacing: rSize(context, 12),
-                                childAspectRatio: 0.88,
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: rSize(context, 14),
+                                mainAxisSpacing: rSize(context, 18),
+                                childAspectRatio: 0.62,
                               ),
-                          itemCount: popularMochis.length,
-                          itemBuilder: (_, idx) => HoverMochiCard(
-                            item: popularMochis[idx],
-                            onTap: () => _showDetailSheet(popularMochis[idx]),
-                            onAddToCart: (m) => _addToCartFromMap(m),
-                          ),
-                        ),
+                          itemCount: items.length,
+                          itemBuilder: (_, idx) {
+                            final mochi = items[idx];
 
-                      SizedBox(height: rSize(context, 24)),
+                            return PopularMochiCard(
+                              mochi: mochi,
+                              onTap: () {
+                                // kalau mau nanti buka detail
+                              },
+                              onAdd: () {
+                                cartController.addItemFromMap({
+                                  'id': mochi.id,
+                                  'name': mochi.name,
+                                  'price': mochi.price,
+                                  'image': mochi.image,
+                                });
+                              },
+                            );
+                          },
+                        );
+                      }),
 
-                      // ===== SPECIAL MOCHI =====
+                      SizedBox(height: rSize(context, 40)),
+
+                      // ===== SPECIAL =====
                       Text(
                         'Special Mochi',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -869,264 +541,26 @@ class _HomeViewState extends State<HomeView> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       SizedBox(height: rSize(context, 12)),
 
-                      // Vertical list of special mochi (scrolls with page)
                       Column(
-                        children: [
-                          for (final mochi in specialMochis) ...[
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                vertical: rSize(context, 8),
-                              ),
-                              child: InkWell(
-                                onTap: () =>
-                                    _showDetailSheet(mochi, reviewTab: false),
-                                borderRadius: BorderRadius.circular(
-                                  rSize(context, 16),
-                                ),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      rSize(context, 16),
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 12,
-                                        offset: Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.all(
-                                          rSize(context, 14),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              width: rSize(context, 100),
-                                              height: rSize(context, 100),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFFFF0F5),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      rSize(context, 12),
-                                                    ),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  mochi['emoji'] as String,
-                                                  style: TextStyle(
-                                                    fontSize: rFont(
-                                                      context,
-                                                      36,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: rSize(context, 12)),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    mochi['title'] as String,
-                                                    style: TextStyle(
-                                                      fontSize: rFont(
-                                                        context,
-                                                        16,
-                                                      ),
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: const Color(
-                                                        0xFF8B4A58,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height: rSize(context, 6),
-                                                  ),
-                                                  Text(
-                                                    "Rp.${mochi['price']}",
-                                                    style: TextStyle(
-                                                      fontSize: rFont(
-                                                        context,
-                                                        14,
-                                                      ),
-                                                      color: const Color(
-                                                        0xFFFF85A7,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height: rSize(context, 8),
-                                                  ),
-                                                  Wrap(
-                                                    spacing: rSize(context, 8),
-                                                    children: (mochi['tags'] as List)
-                                                        .map<Widget>(
-                                                          (t) => Container(
-                                                            padding:
-                                                                EdgeInsets.symmetric(
-                                                                  horizontal:
-                                                                      rSize(
-                                                                        context,
-                                                                        10,
-                                                                      ),
-                                                                  vertical:
-                                                                      rSize(
-                                                                        context,
-                                                                        6,
-                                                                      ),
-                                                                ),
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  const Color(
-                                                                    0xFFFFF0F5,
-                                                                  ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    rSize(
-                                                                      context,
-                                                                      12,
-                                                                    ),
-                                                                  ),
-                                                            ),
-                                                            child: Text(
-                                                              t,
-                                                              style: TextStyle(
-                                                                fontSize: rFont(
-                                                                  context,
-                                                                  11,
-                                                                ),
-                                                                color:
-                                                                    const Color(
-                                                                      0xFF8B4A58,
-                                                                    ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        )
-                                                        .toList(),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: rSize(context, 16),
-                                          vertical: rSize(context, 10),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                mochi['description'] as String,
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: rFont(context, 13),
-                                                  height: 1.4,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              height: rSize(context, 12),
-                                            ),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: ElevatedButton(
-                                                    onPressed: () =>
-                                                        _showDetailSheet(
-                                                          mochi,
-                                                          reviewTab: false,
-                                                        ),
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              const Color(
-                                                                0xFFFF85A7,
-                                                              ),
-                                                        ),
-                                                    child: Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            vertical: rSize(
-                                                              context,
-                                                              12,
-                                                            ),
-                                                          ),
-                                                      child: Text(
-                                                        "Details",
-                                                        style: TextStyle(
-                                                          fontSize: rFont(
-                                                            context,
-                                                            13,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: rSize(context, 12),
-                                                ),
-                                                OutlinedButton(
-                                                  onPressed: () =>
-                                                      _addToCartFromMap(mochi),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          vertical: rSize(
-                                                            context,
-                                                            12,
-                                                          ),
-                                                          horizontal: rSize(
-                                                            context,
-                                                            12,
-                                                          ),
-                                                        ),
-                                                    child: Text(
-                                                      "Add",
-                                                      style: TextStyle(
-                                                        fontSize: rFont(
-                                                          context,
-                                                          13,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(
-                                              height: rSize(context, 12),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                        children: specialMochis.map((mochi) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: rSize(context, 8),
                             ),
-                          ],
-                          SizedBox(height: rSize(context, 20)),
-                        ],
+                            child: _SpecialMochiCard(
+                              mochi: mochi,
+                              onTap: () => _showDetailSheet(mochi),
+                              onAddToCart: () {
+                                cartController.addItemFromMap(mochi);
+                              },
+                            ),
+                          );
+                        }).toList(),
                       ),
+
+                      SizedBox(height: rSize(context, 32)),
                     ],
                   ),
                 ),
@@ -1134,6 +568,146 @@ class _HomeViewState extends State<HomeView> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SpecialMochiCard extends StatelessWidget {
+  final Map<String, dynamic> mochi;
+  final VoidCallback onTap;
+  final VoidCallback onAddToCart;
+
+  const _SpecialMochiCard({
+    required this.mochi,
+    required this.onTap,
+    required this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF0F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Image.asset(mochi['image'], fit: BoxFit.contain),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mochi['title'] ?? mochi['name'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF8B4A58),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Rp.${mochi['price']}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFFFF85A7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        children: (mochi['tags'] as List? ?? [])
+                            .map<Widget>(
+                              (t) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF0F5),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  t,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                mochi['description'] ?? mochi['short'] ?? '',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onTap,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF85A7),
+                    ),
+                    child: const Text("Details"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: onAddToCart,
+                  child: const Text("Add"),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+        ],
       ),
     );
   }

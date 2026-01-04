@@ -1,241 +1,134 @@
 // lib/app/data/models/dummy_data.dart
-import 'package:flutter/material.dart';
 
-final List<Map<String, dynamic>> popularMochisData = [
+final List<Map<String, dynamic>> mochiDummyData = [
   {
     "id": "strawberry",
     "name": "Strawberry",
-    "price": "4.500",
-    "emoji": "🍓",
-    "bg": const Color(0xFFFFF0F5),
+    "price": 4500,
+    "image": "assets/images/strawberry.png",
     "short": "Fresh strawberry wrapped in sweet mochi.",
-    "description":
-        "Mochi lembut dengan isian strawberry segar, manis alami, dan tekstur kenyal yang menyenangkan.",
-    "ingredients": [
-      "Beras ketan",
-      "Strawberry segar",
-      "Gula",
-      "Krim susu"
-    ],
-    "calories": 120,
+    "description": "Mochi lembut dengan isian strawberry segar.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Sweet", "Fruity"],
     "stock": 24,
-    "reviews": [],
   },
   {
     "id": "matcha",
     "name": "Matcha",
-    "price": "5.000",
-    "emoji": "🍵",
-    "bg": const Color(0xFFF0FFF0),
+    "price": 5000,
+    "image": "assets/images/matcha.png",
     "short": "Earthy matcha cream inside soft mochi.",
-    "description":
-        "Mochi dengan krim matcha Jepang yang earthy dan lembut, cocok untuk pecinta teh hijau.",
-    "ingredients": [
-      "Beras ketan",
-      "Matcha powder",
-      "Krim susu",
-      "Gula"
-    ],
-    "calories": 130,
+    "description": "Krim matcha Jepang dengan rasa earthy.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Sweet"],
     "stock": 18,
-    "reviews": [],
   },
   {
-    "id": "choco",
+    "id": "chocolate",
     "name": "Chocolate",
-    "price": "5.000",
-    "emoji": "🍫",
-    "bg": const Color(0xFFFFF8F0),
+    "price": 5000,
+    "image": "assets/images/chocolate.png",
     "short": "Rich chocolate center — pure comfort.",
-    "description":
-        "Isian cokelat pekat yang lumer di dalam mochi kenyal. Comfort food sejati.",
-    "ingredients": [
-      "Beras ketan",
-      "Dark chocolate",
-      "Krim susu",
-      "Gula"
-    ],
-    "calories": 150,
+    "description": "Isian cokelat pekat yang lumer.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Sweet"],
     "stock": 20,
-    "reviews": [],
   },
   {
     "id": "mango",
     "name": "Mango",
-    "price": "5.500",
-    "emoji": "🥭",
-    "bg": const Color(0xFFFFFBE6),
-    "short": "Tropical mango filling — juicy and bright.",
-    "description":
-        "Isian mangga tropis yang juicy dengan rasa segar dan sedikit asam.",
-    "ingredients": [
-      "Beras ketan",
-      "Mangga",
-      "Gula"
-    ],
-    "calories": 125,
+    "price": 5500,
+    "image": "assets/images/mango.png",
+    "short": "Juicy tropical mango filling.",
+    "description": "Mangga tropis manis dan segar.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Fruity"],
     "stock": 15,
-    "reviews": [],
-  },
-  {
-    "id": "black_sesame",
-    "name": "Black Sesame",
-    "price": "5.200",
-    "emoji": "🌑",
-    "bg": const Color(0xFFF6F6F8),
-    "short": "Nutty, slightly savory black sesame paste.",
-    "description":
-        "Pasta wijen hitam dengan rasa gurih-manis yang unik dan beraroma kuat.",
-    "ingredients": [
-      "Beras ketan",
-      "Wijen hitam",
-      "Gula"
-    ],
-    "calories": 145,
-    "stock": 10,
-    "reviews": [],
-  },
-  {
-    "id": "taro",
-    "name": "Taro",
-    "price": "5.300",
-    "emoji": "🍠",
-    "bg": const Color(0xFFFFF0F8),
-    "short": "Creamy taro goodness inside chewy mochi.",
-    "description":
-        "Krim taro yang creamy dan wangi, berpadu dengan mochi kenyal.",
-    "ingredients": [
-      "Beras ketan",
-      "Taro",
-      "Krim susu",
-      "Gula"
-    ],
-    "calories": 135,
-    "stock": 16,
-    "reviews": [],
-  },
-  {
-    "id": "yuzu",
-    "name": "Yuzu",
-    "price": "5.700",
-    "emoji": "🍋",
-    "bg": const Color(0xFFFFFCE6),
-    "short": "Citrusy yuzu filling for a zesty surprise.",
-    "description":
-        "Isian yuzu citrus khas Jepang dengan rasa segar dan aroma tajam.",
-    "ingredients": [
-      "Beras ketan",
-      "Yuzu",
-      "Gula"
-    ],
-    "calories": 110,
-    "stock": 12,
-    "reviews": [],
   },
   {
     "id": "blueberry",
     "name": "Blueberry",
-    "price": "5.400",
-    "emoji": "🫐",
-    "bg": const Color(0xFFF0F8FF),
-    "short": "Sweet-tart blueberry jam wrapped in mochi.",
-    "description":
-        "Selai blueberry manis-asam dibalut mochi lembut.",
-    "ingredients": [
-      "Beras ketan",
-      "Blueberry",
-      "Gula"
-    ],
-    "calories": 128,
+    "price": 5400,
+    "image": "assets/images/blueberry.png",
+    "short": "Sweet-tart blueberry jam inside mochi.",
+    "description": "Perpaduan manis dan asam blueberry.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Fruity"],
     "stock": 14,
-    "reviews": [],
   },
-];
-
-final List<Map<String, dynamic>> specialMochisData = [
   {
-    "id": "strawberry_daifuku",
-    "title": "Strawberry Daifuku",
-    "price": "5.000",
-    "emoji": "🍡",
-    "tags": ["Sweet", "Fruity", "Soft"],
-    "description":
-        "Fresh strawberry wrapped in red bean paste and soft mochi rice cake.",
-    "ingredients": [
-      "Beras ketan",
-      "Strawberry",
-      "Kacang merah",
-      "Gula"
-    ],
-    "calories": 160,
+    "id": "black_sesame",
+    "name": "Black Sesame",
+    "price": 5200,
+    "image": "assets/images/black_sesame.png",
+    "short": "Nutty black sesame paste.",
+    "description": "Wijen hitam gurih dengan aroma khas.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Nutty"],
     "stock": 10,
-    "reviews": [
-      {
-        "rating": 5,
-        "text": "Enak, teksturnya lembut banget!",
-        "author": "Ayu"
-      }
-    ],
   },
   {
-    "id": "mochi_bites",
-    "title": "Mochi Bites",
-    "price": "6.000",
-    "emoji": "🟤",
-    "tags": ["Crunchy", "Assorted", "Snack"],
-    "description":
-        "Bite-sized mochi with assorted fillings: chocolate, matcha, caramel.",
-    "ingredients": [
-      "Beras ketan",
-      "Cokelat",
-      "Matcha",
-      "Karamel"
-    ],
-    "calories": 180,
-    "stock": 20,
-    "reviews": [
-      {
-        "rating": 5,
-        "text": "Sempurna untuk cemilan.",
-        "author": "Citra"
-      }
-    ],
+    "id": "taro",
+    "name": "Taro",
+    "price": 5300,
+    "image": "assets/images/taro.png",
+    "short": "Creamy taro goodness inside mochi.",
+    "description": "Krim taro lembut dan wangi.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Creamy"],
+    "stock": 16,
   },
   {
-    "id": "mochi_cheesecake",
-    "title": "Mochi Cheesecake",
-    "price": "8.500",
-    "emoji": "🧀",
-    "tags": ["Creamy", "Rich", "Dessert"],
-    "description":
-        "Silky cheesecake filling wrapped in thin mochi. Creamy and chewy.",
-    "ingredients": [
-      "Cream cheese",
-      "Beras ketan",
-      "Gula",
-      "Telur"
-    ],
-    "calories": 220,
-    "stock": 6,
-    "reviews": [
-      {
-        "rating": 5,
-        "text": "Kombinasi mochi + cheesecake bikin nagih!",
-        "author": "Ira"
-      },
-      {
-        "rating": 4,
-        "text": "Lembut dan elegan, cocok untuk dessert spesial.",
-        "author": "Rian"
-      }
-    ],
+    "id": "yuzu",
+    "name": "Yuzu",
+    "price": 5700,
+    "image": "assets/images/yuzu.png",
+    "short": "Zesty yuzu citrus filling.",
+    "description": "Citrus yuzu segar khas Jepang.",
+    "isPopular": true,
+    "isSpecial": false,
+    "tags": ["Citrus"],
+    "stock": 12,
   },
-];
-
-final List<Map<String, dynamic>> categoryItemsData = [
-  {'label': 'All', 'active': true},
-  {'label': 'Sweet', 'active': false},
-  {'label': 'Fruity', 'active': false},
-  {'label': 'Ice', 'active': false},
-  {'label': 'Snack', 'active': false},
+  {
+    'id': 'strawberry_daifuku',
+    'name': 'Strawberry Daifuku',
+    'price': 5000,
+    'image': 'assets/images/strawberry_daifuku.png',
+    'short': 'Fresh strawberry wrapped in red bean paste.',
+    'description':
+        'Fresh strawberry wrapped in red bean paste and soft mochi rice cake.',
+    'tags': ['Sweet', 'Fruity', 'Soft'],
+    'isPopular': false,
+    'isSpecial': true,
+  },
+  {
+    'id': 'mochi_bites',
+    'name': 'Mochi Bites',
+    'price': 4500,
+    'image': 'assets/images/mochi_bites.png',
+    'short': 'Bite-sized mochi for quick snacking.',
+    'description': 'Bite-sized mochi perfect for quick snacking.',
+    'tags': ['Chewy', 'Snack'],
+    'isPopular': false,
+    'isSpecial': true,
+  },
+  {
+    'id': 'mochi_cheesecake',
+    'name': 'Mochi Cheesecake',
+    'price': 5300,
+    'image': 'assets/images/mochi_cheesecake.png',
+    'short': 'Creamy cheesecake wrapped in mochi.',
+    'description': 'Creamy cheesecake wrapped in soft mochi.',
+    'tags': ['Creamy', 'Dessert'],
+    'isPopular': false,
+    'isSpecial': true,
+  },
 ];

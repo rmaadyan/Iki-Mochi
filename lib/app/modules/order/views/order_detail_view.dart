@@ -41,6 +41,48 @@ class OrderDetailView extends GetView<OrderController> {
 
             const SizedBox(height: 20),
 
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Informasi Pesanan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _InfoRow(
+                      label: 'Alamat',
+                      value:
+                          order['delivery_address']?.toString() ??
+                          'Alamat tidak tersedia',
+                    ),
+
+                    _InfoRow(
+                      label: 'Tanggal',
+                      value: order['created_at'] != null
+                          ? DateTime.parse(
+                              order['created_at'],
+                            ).toLocal().toString()
+                          : '-',
+                    ),
+
+                    _InfoRow(
+                      label: 'Jumlah Item',
+                      value: '${items.length} item',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // ===== ITEM LIST =====
             const Text(
               'Rincian Pesanan',
@@ -289,5 +331,35 @@ String paymentLabel(String method) {
       return 'Bayar di Tempat (COD)';
     default:
       return '-';
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
   }
 }

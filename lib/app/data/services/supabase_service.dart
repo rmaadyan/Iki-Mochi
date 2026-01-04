@@ -38,64 +38,46 @@ class SupabaseService extends GetxService {
     }
   }
 
-  // ================= AUTH STATE =================
-  User? get currentUser => client.auth.currentUser;
-  Session? get currentSession => client.auth.currentSession;
-
-  /// 🔥 INI PENTING UNTUK RELEASE
-  Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
-
-  bool get isLoggedIn => currentSession != null;
-
-  // ================= AUTH ACTIONS =================
-  Future<AuthResponse> signIn({
-    required String email,
-    required String password,
-  }) async {
-    final res = await client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
-
-    if (res.user == null) {
-      throw Exception('Login gagal');
-    }
-
-    return res;
-  }
-
-  Future<AuthResponse> signUp({
-    required String email,
-    required String password,
-    Map<String, dynamic>? metadata,
-  }) async {
-    return await client.auth.signUp(
-      email: email,
-      password: password,
-      data: metadata,
-    );
-  }
-
   Future<void> signOut() async {
     await client.auth.signOut();
   }
 
-  // ================= DATABASE =================
-  SupabaseQueryBuilder from(String table) => client.from(table);
-  SupabaseStorageClient get storage => client.storage;
+  // ================= AUTH =================
+  User? get currentUser => client.auth.currentUser;
+  Session? get currentSession => client.auth.currentSession;
+
+  Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
+
+  bool get isLoggedIn => currentSession != null;
 
   // ================= ORDER =================
   Future<String> createOrder({
     required int totalPrice,
     required List<Map<String, dynamic>> items,
     required String paymentMethod,
+    required String address,
+    double? latitude,
+    double? longitude,
   }) async {
+    // 🔥 DEBUG PALING AWAL
+    debugPrint('🔥 createOrder() DIPANGGIL DARI SupabaseService');
+    debugPrint('🔥 paymentMethod = $paymentMethod');
+    debugPrint('🔥 address = $address');
+    debugPrint('🔥 latitude = $latitude');
+    debugPrint('🔥 longitude = $longitude');
+
+    debugPrint('🧪 ITEMS MASUK KE SUPABASE:');
+    for (final item in items) {
+      debugPrint(item.toString());
+    }
+
     final user = currentUser;
     if (user == null) {
       throw Exception('User belum login');
     }
 
     try {
+      // 1️⃣ SIMPAN ORDER
       final order = await client
           .from('orders')
           .insert({
@@ -103,16 +85,24 @@ class SupabaseService extends GetxService {
             'total_price': totalPrice,
             'status': 'pending',
             'payment_method': paymentMethod,
+            'delivery_address': address,
+            'delivery_lat': latitude,
+            'delivery_lng': longitude,
           })
           .select()
           .single();
 
       final String orderId = order['id'];
 
+      // 2️⃣ SIMPAN ITEM PESANAN (FIX FINAL)
       final orderItems = items.map((item) {
+        if (item['id'] == null) {
+          throw Exception('product_id NULL ❌ — cek CartItem.id');
+        }
+
         return {
           'order_id': orderId,
-          'product_id': item['id'],
+          'product_id': item['id'], // 🔥 INI YANG HILANG SELAMA INI
           'product_name': item['name'],
           'price': item['price'],
           'qty': item['qty'],
