@@ -132,4 +132,33 @@ class SupabaseService extends GetxService {
 
     return List<Map<String, dynamic>>.from(res);
   }
+
+  Future<String> getUserRole() async {
+    final user = currentUser;
+    if (user == null) return 'user';
+
+    final res = await client
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    return res['role'] ?? 'user';
+  }
+
+  Future<List<Map<String, dynamic>>> getAllOrders() async {
+    final res = await client
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(res);
+  }
+
+  Future<void> updateOrderStatus({
+    required String orderId,
+    required String status,
+  }) async {
+    await client.from('orders').update({'status': status}).eq('id', orderId);
+  }
 }

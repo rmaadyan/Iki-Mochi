@@ -339,6 +339,7 @@ class _HomeViewState extends State<HomeView> {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final iconSize = isTablet ? 38.0 : 24.0;
 
+
     final themeService = Get.find<ThemeToggleService>();
 
     return Scaffold(

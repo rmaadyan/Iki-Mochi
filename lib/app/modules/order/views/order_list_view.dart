@@ -16,92 +16,154 @@ class OrderListView extends GetView<OrderController> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // ===== EMPTY STATE =====
-        if (controller.orders.isEmpty) {
-          return const Center(child: Text('Belum ada pesanan'));
-        }
+        // ===== FILTER + LIST =====
+        return Column(
+          children: [
+            _buildStatusFilter(controller),
 
-        // ===== ORDER LIST =====
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: controller.orders.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final order = controller.orders[index];
-            final List items = (order['order_items'] as List?) ?? [];
+            Expanded(
+              child: controller.filteredOrders.isEmpty
+                  ? const Center(child: Text('Belum ada pesanan'))
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: controller.filteredOrders.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final order = controller.filteredOrders[index];
 
-            final int itemCount = items.length;
+                        final List items =
+                            (order['order_items'] as List?) ?? [];
+                        final int itemCount = items.length;
 
-            final String status =
-                order['status']?.toString().toLowerCase() ?? 'unknown';
+                        final String status =
+                            order['status']?.toString().toLowerCase() ??
+                            'unknown';
 
-            final int totalPrice = order['total_price'] is int
-                ? order['total_price']
-                : int.tryParse(order['total_price']?.toString() ?? '0') ?? 0;
+                        final int totalPrice = order['total_price'] is int
+                            ? order['total_price']
+                            : int.tryParse(
+                                    order['total_price']?.toString() ?? '0',
+                                  ) ??
+                                  0;
 
-            // ===== TITLE LOGIC =====
-            String titleText;
-            if (itemCount == 0) {
-              titleText = 'Item tidak tersedia';
-            } else if (itemCount == 1) {
-              titleText =
-                  items.first['product_name']?.toString() ??
-                  items.first['name']?.toString() ??
-                  'Item';
-            } else {
-              final firstName =
-                  items.first['product_name']?.toString() ??
-                  items.first['name']?.toString() ??
-                  'Item';
-              titleText = '$firstName + ${itemCount - 1} lainnya';
-            }
+                        // ===== TITLE LOGIC (UNCHANGED) =====
+                        String titleText;
+                        if (itemCount == 0) {
+                          titleText = 'Item tidak tersedia';
+                        } else if (itemCount == 1) {
+                          titleText =
+                              items.first['product_name']?.toString() ??
+                              items.first['name']?.toString() ??
+                              'Item';
+                        } else {
+                          final firstName =
+                              items.first['product_name']?.toString() ??
+                              items.first['name']?.toString() ??
+                              'Item';
+                          titleText = '$firstName + ${itemCount - 1} lainnya';
+                        }
 
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: _statusColor(status).withOpacity(0.15),
-                  child: Icon(Icons.receipt_long, color: _statusColor(status)),
-                ),
-                title: Text(
-                  titleText,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status: ${status.toUpperCase()}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _statusColor(status),
-                      ),
+                        return Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: _statusColor(
+                                status,
+                              ).withOpacity(0.15),
+                              child: Icon(
+                                Icons.receipt_long,
+                                color: _statusColor(status),
+                              ),
+                            ),
+                            title: Text(
+                              titleText,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Status: ${status.toUpperCase()}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _statusColor(status),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Total: Rp $totalPrice',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Get.toNamed(
+                                Routes.ORDER_DETAIL,
+                                arguments: order['id'],
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Total: Rp $totalPrice',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Get.toNamed(Routes.ORDER_DETAIL, arguments: order['id']);
-                },
-              ),
-            );
-          },
+            ),
+          ],
         );
       }),
     );
   }
 }
 
-// ===== STATUS COLOR HELPER =====
+/// ===== FILTER CHIPS =====
+Widget _buildStatusFilter(OrderController controller) {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    child: Row(
+      children: OrderFilterStatus.values.map((status) {
+        final isSelected = controller.selectedStatus.value == status;
+
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            label: Text(_filterLabel(status)),
+            selected: isSelected,
+            onSelected: (_) {
+              controller.selectedStatus.value = status;
+            },
+            selectedColor: Colors.blue,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : Colors.black,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
+String _filterLabel(OrderFilterStatus status) {
+  switch (status) {
+    case OrderFilterStatus.all:
+      return 'Semua';
+    case OrderFilterStatus.pending:
+      return 'Pending';
+    case OrderFilterStatus.processing:
+      return 'Proses';
+    case OrderFilterStatus.completed:
+      return 'Selesai';
+  }
+}
+
+/// ===== STATUS COLOR HELPER (UNCHANGED) =====
 Color _statusColor(String status) {
   switch (status) {
     case 'pending':

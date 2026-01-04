@@ -7,6 +7,9 @@ import 'app/data/services/theme_toggle_service.dart';
 import 'app/data/providers/auth_provider.dart';
 import 'app/routes/app_pages.dart';
 
+import 'app/modules/favorite/controllers/favorite_controller.dart';
+import 'app/modules/admin/controllers/admin_order_controller.dart'; 
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,15 +25,19 @@ Future<void> main() async {
   Get.put<AuthProvider>(AuthProvider());
   Get.put<ThemeToggleService>(ThemeToggleService());
 
+  // ================= FAVORITE CONTROLLER =================
+  Get.put<FavoriteController>(FavoriteController(), permanent: true);
+
+  // ================= ADMIN ORDER CONTROLLER =================
+  Get.put<AdminOrderController>(AdminOrderController(), permanent: true);
+
   // ================= AUTH STATE LISTENER =================
   supabase.authStateChanges.listen((event) {
     final session = event.session;
 
     if (session == null) {
-      // logout / expired
       Get.offAllNamed(Routes.LOGIN);
     } else {
-      // login success / restore session
       Get.offAllNamed(Routes.MAIN);
     }
   });

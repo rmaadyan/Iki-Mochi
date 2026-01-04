@@ -1,42 +1,51 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/services/supabase_service.dart';
 
-class OrderController extends GetxController {
-  final SupabaseService _supabase = Get.find();
-
-  final orders = <Map<String, dynamic>>[].obs;
-  final isLoading = false.obs;
-  final errorMessage = RxnString();
+class OrderHistoryView extends StatelessWidget {
+  const OrderHistoryView({super.key});
 
   @override
-  void onInit() {
-    fetchOrders();
-    super.onInit();
-  }
+  Widget build(BuildContext context) {
+    final supabase = Get.find<SupabaseService>();
 
-  Future<void> fetchOrders() async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = null;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Order History')),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: supabase.getOrderHistory(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-      final result = await _supabase.getOrderHistory();
-      orders.assignAll(result);
-    } catch (e) {
-      errorMessage.value = 'Gagal mengambil data pesanan';
-      Get.snackbar('Error', errorMessage.value!);
-    } finally {
-      isLoading.value = false;
-    }
-  }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Belum ada pesanan'));
+          }
 
-  Map<String, dynamic>? getOrderById(String id) {
-    for (final o in orders) {
-      if (o['id'] == id) return o;
-    }
-    return null;
-  }
+          final orders = snapshot.data!;
 
-  bool hasDeliveryLocation(Map<String, dynamic> order) {
-    return order['delivery_lat'] != null && order['delivery_lng'] != null;
+          return ListView.builder(
+            itemCount: orders.length,
+            itemBuilder: (_, i) {
+              final order = orders[i];
+              final items = order['order_items'] as List? ?? [];
+
+              return Card(
+                margin: const EdgeInsets.all(12),
+                child: ListTile(
+                  title: Text(
+                    'Order #${order['id']}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${items.length} item • Rp ${order['total_price']}',
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }
