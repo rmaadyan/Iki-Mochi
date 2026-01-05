@@ -30,7 +30,7 @@ class OrderDetailView extends GetView<OrderController> {
             : int.tryParse(order['total_price']?.toString() ?? '0') ?? 0;
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
             // ===== HEADER / INVOICE CARD =====
             _InvoiceCard(
@@ -102,9 +102,12 @@ class OrderDetailView extends GetView<OrderController> {
                     item['name']?.toString() ??
                     'Item';
 
-                final qty = item['quantity'] is int
-                    ? item['quantity']
-                    : int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                final qty =
+                    item['quantity'] ??
+                    item['qty'] ??
+                    int.tryParse(item['quantity']?.toString() ?? '') ??
+                    int.tryParse(item['qty']?.toString() ?? '') ??
+                    1;
 
                 final price = item['price'] is int
                     ? item['price']
@@ -137,9 +140,16 @@ class OrderDetailView extends GetView<OrderController> {
             OutlinedButton.icon(
               onPressed: () {
                 final items = (order['order_items'] as List).map((e) {
+                  final qty =
+                      e['quantity'] ??
+                      e['qty'] ??
+                      int.tryParse(e['quantity']?.toString() ?? '') ??
+                      int.tryParse(e['qty']?.toString() ?? '') ??
+                      1;
+
                   return {
-                    'name': e['product_name'],
-                    'qty': e['quantity'],
+                    'name': e['product_name'] ?? e['name'],
+                    'qty': qty,
                     'price': e['price'],
                   };
                 }).toList();

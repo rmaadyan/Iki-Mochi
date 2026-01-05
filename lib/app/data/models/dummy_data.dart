@@ -105,9 +105,28 @@ final List<Map<String, dynamic>> mochiDummyData = [
     'short': 'Fresh strawberry wrapped in red bean paste.',
     'description':
         'Fresh strawberry wrapped in red bean paste and soft mochi rice cake.',
+    'longDescription':
+        'Strawberry Daifuku adalah mochi tradisional Jepang dengan isian strawberry segar utuh, dilapisi pasta kacang merah manis dan dibungkus mochi lembut. Perpaduan rasa manis, asam, dan tekstur chewy yang seimbang.',
     'tags': ['Sweet', 'Fruity', 'Soft'],
     'isPopular': false,
     'isSpecial': true,
+    'stock': 12,
+
+    // ✅ TAMBAHAN DETAIL
+    'weight': '80g',
+    'composition': [
+      'Tepung beras ketan',
+      'Strawberry segar',
+      'Kacang merah (anko)',
+      'Gula',
+      'Air',
+    ],
+    'nutrition': {
+      'energy': 120, // kcal
+      'protein': 2, // gram
+      'fat': 1,
+      'carbs': 26,
+    },
   },
   {
     'id': 'mochi_bites',
@@ -116,9 +135,17 @@ final List<Map<String, dynamic>> mochiDummyData = [
     'image': 'assets/images/mochi_bites.png',
     'short': 'Bite-sized mochi for quick snacking.',
     'description': 'Bite-sized mochi perfect for quick snacking.',
+    'longDescription':
+        'Mochi Bites adalah mochi mini berukuran sekali gigit. Cocok untuk camilan cepat dengan tekstur kenyal dan rasa manis ringan, praktis dinikmati kapan saja.',
     'tags': ['Chewy', 'Snack'],
     'isPopular': false,
     'isSpecial': true,
+    'stock': 20,
+
+    // ✅ TAMBAHAN DETAIL
+    'weight': '50g',
+    'composition': ['Tepung beras ketan', 'Gula', 'Air', 'Perisa alami'],
+    'nutrition': {'energy': 90, 'protein': 1, 'fat': 0.5, 'carbs': 20},
   },
   {
     'id': 'mochi_cheesecake',
@@ -127,8 +154,16 @@ final List<Map<String, dynamic>> mochiDummyData = [
     'image': 'assets/images/mochi_cheesecake.png',
     'short': 'Creamy cheesecake wrapped in mochi.',
     'description': 'Creamy cheesecake wrapped in soft mochi.',
+    'longDescription':
+        'Mochi Cheesecake menghadirkan perpaduan cheesecake creamy ala Barat dengan balutan mochi Jepang yang lembut. Rasanya rich, creamy, dan memanjakan.',
     'tags': ['Creamy', 'Dessert'],
     'isPopular': false,
     'isSpecial': true,
+    'stock': 14,
+
+    // ✅ TAMBAHAN DETAIL
+    'weight': '90g',
+    'composition': ['Tepung beras ketan', 'Krim keju', 'Susu', 'Gula', 'Telur'],
+    'nutrition': {'energy': 150, 'protein': 3, 'fat': 5, 'carbs': 22},
   },
 ];

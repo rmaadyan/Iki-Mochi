@@ -339,7 +339,6 @@ class _HomeViewState extends State<HomeView> {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final iconSize = isTablet ? 38.0 : 24.0;
 
-
     final themeService = Get.find<ThemeToggleService>();
 
     return Scaffold(
@@ -836,237 +835,235 @@ class _MochiDetailSheetState extends State<MochiDetailSheet>
   Widget build(BuildContext context) {
     final mochi = widget.mochi;
 
+    final List ingredients =
+        (mochi['ingredients'] as List?) ??
+        (mochi['composition'] as List?) ??
+        [];
+
+    final nutrition = mochi['nutrition'] as Map<String, dynamic>?;
+
     final List<Map<String, dynamic>> reviews =
         (mochi['reviews'] as List?)
             ?.map((e) => Map<String, dynamic>.from(e))
             .toList() ??
         [];
 
-    return Column(
-      children: [
-        SizedBox(height: rSize(context, 8)),
-        Container(
-          width: rSize(context, 40),
-          height: rSize(context, 4),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(rSize(context, 8)),
+    return SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          SizedBox(height: rSize(context, 8)),
+          Container(
+            width: rSize(context, 40),
+            height: rSize(context, 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(rSize(context, 8)),
+            ),
           ),
-        ),
 
-        // === HEADER ===
-        Padding(
-          padding: EdgeInsets.all(rSize(context, 16)),
-          child: Row(
-            children: [
-              Container(
-                width: rSize(context, 96),
-                height: rSize(context, 96),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
-                  borderRadius: BorderRadius.circular(rSize(context, 12)),
+          // === HEADER ===
+          Padding(
+            padding: EdgeInsets.all(rSize(context, 16)),
+            child: Row(
+              children: [
+                Container(
+                  width: rSize(context, 96),
+                  height: rSize(context, 96),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF0F5),
+                    borderRadius: BorderRadius.circular(rSize(context, 12)),
+                  ),
+                  child: Image.asset(mochi['image'], fit: BoxFit.contain),
                 ),
-                child: Center(
-                  child: Text(
-                    mochi['emoji'] ?? '🍡',
-                    style: TextStyle(fontSize: rFont(context, 32)),
+                SizedBox(width: rSize(context, 12)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mochi['title'] ?? mochi['name'] ?? '',
+                        style: TextStyle(
+                          fontSize: rFont(context, 18),
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF8B4A58),
+                        ),
+                      ),
+                      SizedBox(height: rSize(context, 4)),
+                      Text(
+                        "Rp.${mochi['price']}",
+                        style: TextStyle(
+                          fontSize: rFont(context, 14),
+                          color: const Color(0xFFFF85A7),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              SizedBox(width: rSize(context, 12)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      mochi['title'] ?? mochi['name'] ?? '',
-                      style: TextStyle(
-                        fontSize: rFont(context, 18),
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8B4A58),
-                      ),
-                    ),
-                    SizedBox(height: rSize(context, 4)),
-                    Text(
-                      "Rp.${mochi['price']}",
-                      style: TextStyle(
-                        fontSize: rFont(context, 14),
-                        color: const Color(0xFFFF85A7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ],
+            ),
+          ),
+
+          // === TABS ===
+          TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFFFF85A7),
+            indicatorColor: const Color(0xFFFF85A7),
+            tabs: const [
+              Tab(text: "Details"),
+              Tab(text: "Reviews"),
             ],
           ),
-        ),
 
-        // === TABS ===
-        TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFFFF85A7),
-          indicatorColor: const Color(0xFFFF85A7),
-          tabs: const [
-            Tab(text: "Details"),
-            Tab(text: "Reviews"),
-          ],
-        ),
-
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              // ===== DETAILS TAB =====
-              Padding(
-                padding: EdgeInsets.all(rSize(context, 16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // === DESCRIPTION ===
-                    Text(
-                      mochi['description'] ??
-                          mochi['short'] ??
-                          'No description available.',
-                      style: TextStyle(
-                        fontSize: rFont(context, 13),
-                        color: Colors.grey.shade700,
-                        height: 1.4,
-                      ),
-                    ),
-
-                    SizedBox(height: rSize(context, 20)),
-
-                    // === INGREDIENTS ===
-                    if (mochi['ingredients'] != null) ...[
-                      Text(
-                        "Ingredients",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: rFont(context, 14),
-                        ),
-                      ),
-                      SizedBox(height: rSize(context, 8)),
-                      Wrap(
-                        spacing: rSize(context, 8),
-                        runSpacing: rSize(context, 6),
-                        children: (mochi['ingredients'] as List)
-                            .map<Widget>(
-                              (i) => Chip(
-                                label: Text(
-                                  i.toString(),
-                                  style: TextStyle(
-                                    fontSize: rFont(context, 11),
-                                  ),
-                                ),
-                                backgroundColor: const Color(0xFFFFF0F5),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      SizedBox(height: rSize(context, 16)),
-                    ],
-
-                    // === NUTRITION INFO ===
-                    Row(
-                      children: [
-                        if (mochi['calories'] != null)
-                          _InfoBadge(
-                            label: "${mochi['calories']} kcal",
-                            icon: Icons.local_fire_department,
-                          ),
-                        SizedBox(width: rSize(context, 12)),
-                        if (mochi['stock'] != null)
-                          _InfoBadge(
-                            label: "Stock: ${mochi['stock']}",
-                            icon: Icons.inventory_2,
-                          ),
-                      ],
-                    ),
-
-                    SizedBox(height: rSize(context, 24)),
-
-                    // === ADD TO CART ===
-                    SizedBox(
-                      width: double.infinity,
-                      height: rSize(context, 44),
-                      child: ElevatedButton(
-                        onPressed: () => widget.onAddToCart?.call(mochi),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF85A7),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              rSize(context, 22),
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          "Add to Cart",
-                          style: TextStyle(fontSize: rFont(context, 14)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ===== REVIEWS TAB =====
-              Column(
-                children: [
-                  Expanded(
-                    child: reviews.isEmpty
-                        ? Center(
-                            child: Text(
-                              "Belum ada review",
-                              style: TextStyle(fontSize: rFont(context, 13)),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(rSize(context, 12)),
-                            itemCount: reviews.length,
-                            itemBuilder: (_, i) => _buildReviewCard(reviews[i]),
-                          ),
+          // === TAB CONTENT ===
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // ===== DETAILS TAB =====
+                SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    rSize(context, 16),
+                    rSize(context, 16),
+                    rSize(context, 16),
+                    rSize(context, 120), // 🔥 ruang aman untuk tombol
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mochi['longDescription'] ??
+                            mochi['description'] ??
+                            mochi['short'] ??
+                            'No description available.',
+                        style: TextStyle(
+                          fontSize: rFont(context, 13),
+                          color: Colors.grey.shade700,
+                          height: 1.5,
+                        ),
+                      ),
 
-                  // === INPUT REVIEW ===
-                  Padding(
-                    padding: EdgeInsets.all(rSize(context, 12)),
-                    child: Row(
-                      children: [
-                        DropdownButton<int>(
-                          value: _selectedRating,
-                          items: [5, 4, 3, 2, 1]
-                              .map(
-                                (r) => DropdownMenuItem(
-                                  value: r,
-                                  child: Text("$r ★"),
+                      SizedBox(height: rSize(context, 20)),
+
+                      if (ingredients.isNotEmpty) ...[
+                        Text(
+                          "Komposisi",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: rFont(context, 14),
+                          ),
+                        ),
+                        SizedBox(height: rSize(context, 8)),
+                        Wrap(
+                          spacing: rSize(context, 8),
+                          runSpacing: rSize(context, 6),
+                          children: ingredients
+                              .map<Widget>(
+                                (i) => Chip(
+                                  label: Text(
+                                    i.toString(),
+                                    style: TextStyle(
+                                      fontSize: rFont(context, 11),
+                                    ),
+                                  ),
+                                  backgroundColor: const Color(0xFFFFF0F5),
                                 ),
                               )
                               .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedRating = v ?? 5),
                         ),
-                        SizedBox(width: rSize(context, 8)),
-                        Expanded(
-                          child: TextField(
-                            controller: _reviewTextController,
-                            decoration: const InputDecoration(
-                              hintText: "Tulis review...",
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.send),
-                          onPressed: _addReview,
-                        ),
+                        SizedBox(height: rSize(context, 16)),
                       ],
+
+                      Wrap(
+                        spacing: rSize(context, 12),
+                        runSpacing: rSize(context, 8),
+                        children: [
+                          if (nutrition?['energy'] != null)
+                            _InfoBadge(
+                              label: "${nutrition!['energy']} kcal",
+                              icon: Icons.local_fire_department,
+                            ),
+                          if (nutrition?['protein'] != null)
+                            _InfoBadge(
+                              label: "Protein ${nutrition!['protein']}g",
+                              icon: Icons.fitness_center,
+                            ),
+                          if (nutrition?['carbs'] != null)
+                            _InfoBadge(
+                              label: "Carbs ${nutrition!['carbs']}g",
+                              icon: Icons.grain,
+                            ),
+                          if (mochi['weight'] != null)
+                            _InfoBadge(
+                              label: mochi['weight'],
+                              icon: Icons.scale,
+                            ),
+                          if (mochi['stock'] != null)
+                            _InfoBadge(
+                              label: "Stock ${mochi['stock']}",
+                              icon: Icons.inventory_2,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ===== REVIEWS TAB =====
+                Column(
+                  children: [
+                    Expanded(
+                      child: reviews.isEmpty
+                          ? Center(
+                              child: Text(
+                                "Belum ada review",
+                                style: TextStyle(fontSize: rFont(context, 13)),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.all(rSize(context, 12)),
+                              itemCount: reviews.length,
+                              itemBuilder: (_, i) =>
+                                  _buildReviewCard(reviews[i]),
+                            ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // === SAFE ADD TO CART ===
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                rSize(context, 16),
+                rSize(context, 8),
+                rSize(context, 16),
+                rSize(context, 16),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: rSize(context, 48),
+                child: ElevatedButton(
+                  onPressed: () => widget.onAddToCart?.call(mochi),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF85A7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(rSize(context, 24)),
                     ),
                   ),
-                ],
+                  child: Text(
+                    "Add to Cart",
+                    style: TextStyle(fontSize: rFont(context, 14)),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
