@@ -19,6 +19,12 @@ class CheckoutController extends GetxController {
   final RxDouble latitude = 0.0.obs;
   final RxDouble longitude = 0.0.obs;
 
+  // 🆕 TAMBAHAN: loading submit (anti double submit)
+  final RxBool isSubmitting = false.obs;
+
+  // 🆕 TAMBAHAN: helper validasi lokasi (ANTI MAP CRASH)
+  bool get hasValidLocation => latitude.value != 0.0 && longitude.value != 0.0;
+
   // ================= MANUAL ADDRESS =================
   void openManualAddressDialog() {
     Get.dialog(
@@ -33,57 +39,76 @@ class CheckoutController extends GetxController {
             border: OutlineInputBorder(),
           ),
         ),
-        actions: [TextButton(onPressed: Get.back, child: const Text('Simpan'))],
+        actions: [
+          TextButton(
+            onPressed: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              Get.back();
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
       ),
     );
   }
 
   // ================= GPS =================
   Future<void> pickFromGPS() async {
-    final enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled) {
-      Get.snackbar('GPS Mati', 'Aktifkan GPS terlebih dahulu');
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar('Izin ditolak', 'GPS tidak diizinkan');
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) {
+        Get.snackbar('GPS Mati', 'Aktifkan GPS terlebih dahulu');
         return;
       }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          Get.snackbar('Izin ditolak', 'GPS tidak diizinkan');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        Get.snackbar('Izin ditolak', 'Aktifkan izin lokasi di pengaturan');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      latitude.value = position.latitude;
+      longitude.value = position.longitude;
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        address.value =
+            '${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}'
+                .replaceAll(RegExp(', +,'), ',')
+                .trim();
+      }
+
+      FocusManager.instance.primaryFocus?.unfocus();
+
+      Get.snackbar(
+        'Lokasi berhasil',
+        'Alamat diambil dari GPS',
+        duration: const Duration(seconds: 1),
+      );
+    } catch (e) {
+      debugPrint('❌ GPS ERROR: $e');
+      Get.snackbar('Gagal', 'Tidak bisa mengambil lokasi');
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar('Izin ditolak', 'Aktifkan izin lokasi di pengaturan');
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    latitude.value = position.latitude;
-    longitude.value = position.longitude;
-
-    final placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-
-    final place = placemarks.first;
-    address.value = '${place.street}, ${place.subLocality}, ${place.locality}';
-
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    Get.snackbar(
-      'Lokasi berhasil',
-      'Alamat diambil dari GPS',
-      duration: const Duration(seconds: 1),
-    );
   }
 
+  // ================= SET LOCATION (EXTERNAL) =================
   void setLocation({
     required double lat,
     required double lng,
@@ -100,64 +125,64 @@ class CheckoutController extends GetxController {
     paymentMethod.value = value;
   }
 
-  // ================= SUBMIT =================
-
+  // ================= SUBMIT ORDER =================
   Future<void> submitOrder() async {
-    debugPrint('🔥 SUBMIT ORDER DIPANGGIL');
+    if (isSubmitting.value) return; // 🛑 anti double tap
+    isSubmitting.value = true;
 
-    if (cart.items.isEmpty) {
-      Get.snackbar('Gagal', 'Keranjang kosong');
-      for (final item in cart.items.values) {
-        debugPrint('🧪 CART ITEM -> id=${item.id}, name=${item.name}');
+    try {
+      debugPrint('🔥 SUBMIT ORDER DIPANGGIL');
+
+      if (cart.items.isEmpty) {
+        Get.snackbar('Gagal', 'Keranjang kosong');
+        return;
       }
 
-      return;
-    }
+      if (address.value.isEmpty) {
+        Get.snackbar('Gagal', 'Alamat belum diisi');
+        return;
+      }
 
-    if (address.isEmpty) {
-      Get.snackbar('Gagal', 'Alamat belum diisi');
-      return;
-    }
+      if (paymentMethod.value.isEmpty) {
+        Get.snackbar('Gagal', 'Pilih metode pembayaran');
+        return;
+      }
 
-    if (paymentMethod.isEmpty) {
-      Get.snackbar('Gagal', 'Pilih metode pembayaran');
-      return;
-    }
+      final items = cart.items.values.map((item) {
+        return {
+          'id': item.id,
+          'name': item.name,
+          'price': item.price,
+          'qty': item.qty,
+          'emoji': item.image,
+        };
+      }).toList();
 
-    final items = cart.items.values.map((item) {
-      return {
-        'id': item.id, // 🔥 WAJIB ADA
-        'name': item.name,
-        'price': item.price,
-        'qty': item.qty,
-        'emoji': item.image,
-      };
-    }).toList();
-
-    debugPrint('🧪 CART ITEMS YANG AKAN DIKIRIM:');
-    for (final item in cart.items.values) {
-      debugPrint(
-        '🧪 id=${item.id}, name=${item.name}, price=${item.price}, qty=${item.qty}',
+      await supabase.createOrder(
+        totalPrice: cart.totalPrice,
+        items: items,
+        paymentMethod: paymentMethod.value,
+        address: address.value,
+        latitude: hasValidLocation ? latitude.value : null,
+        longitude: hasValidLocation ? longitude.value : null,
       );
+
+      // 🔄 refresh order user
+      await orderController.fetchOrders();
+
+      // 🧹 reset state
+      cart.clear();
+      address.value = '';
+      paymentMethod.value = '';
+      latitude.value = 0;
+      longitude.value = 0;
+
+      Get.dialog(const OrderSuccessDialog(), barrierDismissible: false);
+    } catch (e) {
+      debugPrint('❌ SUBMIT ORDER ERROR: $e');
+      Get.snackbar('Gagal', 'Terjadi kesalahan saat membuat pesanan');
+    } finally {
+      isSubmitting.value = false;
     }
-
-    await supabase.createOrder(
-      totalPrice: cart.totalPrice,
-      items: items,
-      paymentMethod: paymentMethod.value,
-      address: address.value,
-      latitude: latitude.value == 0 ? null : latitude.value,
-      longitude: longitude.value == 0 ? null : longitude.value,
-    );
-
-    await orderController.fetchOrders();
-    cart.clear();
-
-    address.value = '';
-    paymentMethod.value = '';
-    latitude.value = 0;
-    longitude.value = 0;
-
-    Get.dialog(const OrderSuccessDialog(), barrierDismissible: false);
   }
 }

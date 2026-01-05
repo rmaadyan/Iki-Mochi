@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter Gradle Plugin WAJIB terakhir
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -22,24 +22,29 @@ android {
 
     defaultConfig {
         applicationId = "com.example.mochi"
+
+        // ✅ FIX: minSdk HARUS di sini
         minSdk = flutter.minSdkVersion
+
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // sementara pakai debug key (AMAN untuk sekarang)
             signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
 
 dependencies {
+    // ✅ SUDAH BENAR (jangan dihapus)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    // 🔥 WAJIB UNTUK GOOGLE MAPS
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }
 
 flutter {

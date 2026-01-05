@@ -193,7 +193,7 @@ class CheckoutView extends GetView<CheckoutController> {
 
                       const SizedBox(height: 12),
 
-                      // ================= MINI MAP GPS =================
+                      // ================= MINI MAP GPS (SAFE) =================
                       Obx(() {
                         final hasLocation =
                             controller.latitude.value != 0 &&
@@ -201,12 +201,8 @@ class CheckoutView extends GetView<CheckoutController> {
 
                         if (!hasLocation) return const SizedBox();
 
-                        return Container(
-                          height: 140,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
+                        return SizedBox(
+                          height: 150, // 🔥 WAJIB FIXED HEIGHT
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: GoogleMap(
@@ -230,8 +226,8 @@ class CheckoutView extends GetView<CheckoutController> {
                               myLocationButtonEnabled: false,
                               compassEnabled: false,
                               mapToolbarEnabled: false,
-                              scrollGesturesEnabled: false,
-                              liteModeEnabled: true, // 🔥 ringan & aman
+                              liteModeEnabled: true, // ✅ WAJIB (ANTI CRASH)
+                              onMapCreated: (_) {}, // ✅ PREVENT NULL CONTROLLER
                             ),
                           ),
                         );
