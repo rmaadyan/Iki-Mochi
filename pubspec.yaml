@@ -56,6 +56,7 @@ dependencies:
   printing: ^5.12.0
   geocoding: ^2.1.0
   uuid: ^4.3.3
+  google_maps_flutter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

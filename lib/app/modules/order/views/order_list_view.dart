@@ -8,115 +8,122 @@ class OrderListView extends GetView<OrderController> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 PASTIKAN REFRESH SAAT HALAMAN DIBUKA
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchOrders();
+    });
+
     return Scaffold(
       appBar: AppBar(title: const Text('Pesanan'), centerTitle: true),
-      body: Obx(() {
-        // ===== LOADING =====
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: RefreshIndicator(
+        onRefresh: controller.fetchOrders, // 👈 MANUAL REFRESH
+        child: Obx(() {
+          // ===== LOADING =====
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        // ===== FILTER + LIST =====
-        return Column(
-          children: [
-            _buildStatusFilter(controller),
+          return Column(
+            children: [
+              _buildStatusFilter(controller),
 
-            Expanded(
-              child: controller.filteredOrders.isEmpty
-                  ? const Center(child: Text('Belum ada pesanan'))
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: controller.filteredOrders.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final order = controller.filteredOrders[index];
+              Expanded(
+                child: controller.filteredOrders.isEmpty
+                    ? const Center(child: Text('Belum ada pesanan'))
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: controller.filteredOrders.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final order = controller.filteredOrders[index];
 
-                        final List items =
-                            (order['order_items'] as List?) ?? [];
-                        final int itemCount = items.length;
+                          final List items =
+                              (order['order_items'] as List?) ?? [];
 
-                        final String status =
-                            order['status']?.toString().toLowerCase() ??
-                            'unknown';
+                          final String status =
+                              order['status']?.toString().toLowerCase() ??
+                              'unknown';
 
-                        final int totalPrice = order['total_price'] is int
-                            ? order['total_price']
-                            : int.tryParse(
-                                    order['total_price']?.toString() ?? '0',
-                                  ) ??
-                                  0;
+                          final int totalPrice = order['total_price'] is int
+                              ? order['total_price']
+                              : int.tryParse(
+                                      order['total_price']?.toString() ?? '0',
+                                    ) ??
+                                    0;
 
-                        // ===== TITLE LOGIC (UNCHANGED) =====
-                        String titleText;
-                        if (itemCount == 0) {
-                          titleText = 'Item tidak tersedia';
-                        } else if (itemCount == 1) {
-                          titleText =
-                              items.first['product_name']?.toString() ??
-                              items.first['name']?.toString() ??
-                              'Item';
-                        } else {
-                          final firstName =
-                              items.first['product_name']?.toString() ??
-                              items.first['name']?.toString() ??
-                              'Item';
-                          titleText = '$firstName + ${itemCount - 1} lainnya';
-                        }
+                          String titleText;
+                          if (items.isEmpty) {
+                            titleText = 'Item tidak tersedia';
+                          } else if (items.length == 1) {
+                            titleText =
+                                items.first['product_name'] ??
+                                items.first['name'] ??
+                                'Item';
+                          } else {
+                            final firstName =
+                                items.first['product_name'] ??
+                                items.first['name'] ??
+                                'Item';
+                            titleText =
+                                '$firstName + ${items.length - 1} lainnya';
+                          }
 
-                        return Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: _statusColor(
-                                status,
-                              ).withOpacity(0.15),
-                              child: Icon(
-                                Icons.receipt_long,
-                                color: _statusColor(status),
-                              ),
+                          return Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            title: Text(
-                              titleText,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: _statusColor(
+                                  status,
+                                ).withOpacity(0.15),
+                                child: Icon(
+                                  Icons.receipt_long,
+                                  color: _statusColor(status),
+                                ),
                               ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Status: ${status.toUpperCase()}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _statusColor(status),
+                              title: Text(
+                                titleText,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Status: ${status.toUpperCase()}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _statusColor(status),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Total: Rp $totalPrice',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Total: Rp $totalPrice',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Get.toNamed(
+                                  Routes.ORDER_DETAIL,
+                                  arguments: order['id'],
+                                );
+                              },
                             ),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              Get.toNamed(
-                                Routes.ORDER_DETAIL,
-                                arguments: order['id'],
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
-      }),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        }),
+      ),
     );
   }
 }

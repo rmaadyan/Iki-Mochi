@@ -12,11 +12,11 @@ import '../modules/location/bindings/gps_location_binding.dart';
 import '../modules/location/views/gps_location_view.dart';
 import '../modules/order/bindings/order_binding.dart';
 import '../modules/order/views/order_detail_view.dart';
-import '../modules/main/main_binding.dart';
+import '../modules/main/bindings/main_binding.dart';
 import '../modules/checkout/bindings/checkout_binding.dart';
 import '../modules/checkout/views/checkout_view.dart';  
 
-import '../modules/main/main_view.dart';
+import '../modules/main/views/main_view.dart';
 
 part 'app_routes.dart';
 

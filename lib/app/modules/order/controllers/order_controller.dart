@@ -11,7 +11,6 @@ class OrderController extends GetxController {
   final orders = <Map<String, dynamic>>[].obs;
   final isLoading = false.obs;
   final errorMessage = RxnString();
-
   final selectedStatus = OrderFilterStatus.all.obs;
 
   // ================= REALTIME =================
@@ -42,15 +41,20 @@ class OrderController extends GetxController {
     // 2️⃣ realtime listener (admin update → user update)
     _listenOrderRealtime();
 
-    // 3️⃣ refetch kalau user ganti filter (aman & murah)
-    ever(selectedStatus, (_) => fetchOrders());
+    // 3️⃣ kalau filter berubah → UI otomatis update
+    ever(selectedStatus, (status) {
+      if (status == OrderFilterStatus.all) {
+        fetchOrders(); // pastikan data fresh
+      }
+    });
   }
 
   @override
   void onClose() {
-    // cleanup realtime
+    // 🧹 cleanup realtime
     if (_orderChannel != null) {
       _supabase.client.removeChannel(_orderChannel!);
+      _orderChannel = null;
     }
     super.onClose();
   }
@@ -79,12 +83,11 @@ class OrderController extends GetxController {
     _orderChannel = _supabase.client
         .channel('user-orders-${user.id}')
         .onPostgresChanges(
-          event: PostgresChangeEvent.update,
+          event: PostgresChangeEvent.all, // 🔥 BUKAN UPDATE SAJA
           schema: 'public',
           table: 'orders',
           callback: (payload) {
-            // 🔥 admin update status → refetch user order
-            fetchOrders();
+            fetchOrders(); // 🔥 SELALU REFRESH
           },
         )
         .subscribe();

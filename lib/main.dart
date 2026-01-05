@@ -8,7 +8,8 @@ import 'app/data/providers/auth_provider.dart';
 import 'app/routes/app_pages.dart';
 
 import 'app/modules/favorite/controllers/favorite_controller.dart';
-import 'app/modules/admin/controllers/admin_order_controller.dart'; 
+import 'app/modules/admin/controllers/admin_order_controller.dart';
+import 'app/modules/order/controllers/order_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,9 @@ Future<void> main() async {
     if (session == null) {
       Get.offAllNamed(Routes.LOGIN);
     } else {
+      if (Get.isRegistered<OrderController>()) {
+        Get.find<OrderController>().fetchOrders();
+      }
       Get.offAllNamed(Routes.MAIN);
     }
   });
