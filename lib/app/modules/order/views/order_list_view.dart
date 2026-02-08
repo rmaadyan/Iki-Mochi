@@ -1,0 +1,187 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../controllers/order_controller.dart';
+import '../../../routes/app_pages.dart';
+
+class OrderListView extends GetView<OrderController> {
+  const OrderListView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 🔥 PASTIKAN REFRESH SAAT HALAMAN DIBUKA
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchOrders();
+    });
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Pesanan'), centerTitle: true),
+      body: RefreshIndicator(
+        onRefresh: controller.fetchOrders, // 👈 MANUAL REFRESH
+        child: Obx(() {
+          // ===== LOADING =====
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Column(
+            children: [
+              _buildStatusFilter(controller),
+
+              Expanded(
+                child: controller.filteredOrders.isEmpty
+                    ? const Center(child: Text('Belum ada pesanan'))
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: controller.filteredOrders.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final order = controller.filteredOrders[index];
+
+                          final List items =
+                              (order['order_items'] as List?) ?? [];
+
+                          final String status =
+                              order['status']?.toString().toLowerCase() ??
+                              'unknown';
+
+                          final int totalPrice = order['total_price'] is int
+                              ? order['total_price']
+                              : int.tryParse(
+                                      order['total_price']?.toString() ?? '0',
+                                    ) ??
+                                    0;
+
+                          String titleText;
+                          if (items.isEmpty) {
+                            titleText = 'Item tidak tersedia';
+                          } else if (items.length == 1) {
+                            titleText =
+                                items.first['product_name'] ??
+                                items.first['name'] ??
+                                'Item';
+                          } else {
+                            final firstName =
+                                items.first['product_name'] ??
+                                items.first['name'] ??
+                                'Item';
+                            titleText =
+                                '$firstName + ${items.length - 1} lainnya';
+                          }
+
+                          return Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: _statusColor(
+                                  status,
+                                ).withOpacity(0.15),
+                                child: Icon(
+                                  Icons.receipt_long,
+                                  color: _statusColor(status),
+                                ),
+                              ),
+                              title: Text(
+                                titleText,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Status: ${status.toUpperCase()}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _statusColor(status),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Total: Rp $totalPrice',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Get.toNamed(
+                                  Routes.ORDER_DETAIL,
+                                  arguments: order['id'],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// ===== FILTER CHIPS =====
+Widget _buildStatusFilter(OrderController controller) {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    child: Row(
+      children: OrderFilterStatus.values.map((status) {
+        final isSelected = controller.selectedStatus.value == status;
+
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            label: Text(_filterLabel(status)),
+            selected: isSelected,
+            onSelected: (_) {
+              controller.selectedStatus.value = status;
+            },
+            selectedColor: Colors.blue,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : Colors.black,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
+String _filterLabel(OrderFilterStatus status) {
+  switch (status) {
+    case OrderFilterStatus.all:
+      return 'Semua';
+    case OrderFilterStatus.pending:
+      return 'Pending';
+    case OrderFilterStatus.processing:
+      return 'Proses';
+    case OrderFilterStatus.completed:
+      return 'Selesai';
+  }
+}
+
+/// ===== STATUS COLOR HELPER (UNCHANGED) =====
+Color _statusColor(String status) {
+  switch (status) {
+    case 'pending':
+      return Colors.orange;
+    case 'processing':
+      return Colors.blue;
+    case 'shipped':
+      return Colors.purple;
+    case 'completed':
+      return Colors.green;
+    default:
+      return Colors.grey;
+  }
+}

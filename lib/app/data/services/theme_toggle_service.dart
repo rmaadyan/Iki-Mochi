@@ -1,22 +1,37 @@
-// app/data/services/theme_toggle_service.dart
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeToggleService extends GetxService {
-  final RxBool _isDark = false.obs;
-  late SharedPreferences _prefs;
+  final isDark = false.obs;
 
-  bool get isDark => _isDark.value;      // buat dipakai di main.dart
-  RxBool get isDarkObs => _isDark;       // buat Obx di widget
-
-  Future<ThemeToggleService> init() async {
-    _prefs = await SharedPreferences.getInstance();
-    _isDark.value = _prefs.getBool('isDarkTheme') ?? false;
-    return this;
-  }
-
-  Future<void> toggleTheme() async {
-    _isDark.value = !_isDark.value;
-    await _prefs.setBool('isDarkTheme', _isDark.value);
+  void toggleTheme() {
+    isDark.value = !isDark.value;
+    Get.changeTheme(isDark.value ? darkTheme : lightTheme);
   }
 }
+
+// ===== THEME DEFINITIONS =====
+
+final ThemeData lightTheme = ThemeData(
+  brightness: Brightness.light,
+  scaffoldBackgroundColor: const Color(0xFFFFF7FC),
+  primaryColor: const Color(0xFF8B4A58),
+  fontFamily: 'Poppins',
+  appBarTheme: const AppBarTheme(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    iconTheme: IconThemeData(color: Color(0xFF8B4A58)),
+  ),
+);
+
+final ThemeData darkTheme = ThemeData(
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+  primaryColor: Colors.pinkAccent,
+  fontFamily: 'Poppins',
+  appBarTheme: const AppBarTheme(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    iconTheme: IconThemeData(color: Colors.pinkAccent),
+  ),
+);

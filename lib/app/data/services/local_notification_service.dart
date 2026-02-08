@@ -6,17 +6,22 @@ class LocalNotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
+  // ================= INIT =================
   Future<LocalNotificationService> init() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidInit);
 
     await _plugin.initialize(initSettings);
+
     await _requestPermission();
+
+    // 🔥 WAJIB DIPANGGIL (INI YANG KEMARIN HILANG)
     await _createAndroidChannels();
 
     return this;
   }
 
+  // ================= PERMISSION =================
   Future<void> _requestPermission() async {
     if (!Platform.isAndroid) return;
 
@@ -28,7 +33,7 @@ class LocalNotificationService extends GetxService {
     await androidPlugin?.requestNotificationsPermission();
   }
 
-  // 🔥 CHANNEL TANPA SOUND
+  // ================= CREATE CHANNELS =================
   Future<void> _createAndroidChannels() async {
     final androidPlugin = _plugin
         .resolvePlatformSpecificImplementation<
@@ -39,11 +44,34 @@ class LocalNotificationService extends GetxService {
 
     await androidPlugin.createNotificationChannel(
       const AndroidNotificationChannel(
-        'general_channel',
-        'General Notification',
-        description: 'Notifikasi aplikasi',
-        importance: Importance.high,
-        playSound: false, // ⬅️ PENTING
+        'login_channel_v3',
+        'Login Notification',
+        description: 'Notifikasi login user',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
+      ),
+    );
+
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'logout_channel_v3',
+        'Logout Notification',
+        description: 'Notifikasi logout user',
+        importance: Importance.defaultImportance,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
+      ),
+    );
+
+    await androidPlugin.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'order_channel_v3',
+        'Order Notification',
+        description: 'Notifikasi pesanan berhasil',
+        importance: Importance.max,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('mochi_cat'),
       ),
     );
   }
@@ -51,14 +79,13 @@ class LocalNotificationService extends GetxService {
   // ================= LOGIN =================
   Future<void> showLoginSuccess({required String userName}) async {
     await _plugin.show(
-      1,
-      'Login Berhasil',
+      10,
+      'Login Berhasil 🎉',
       'Selamat datang, $userName',
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'general_channel',
-          'General Notification',
-          playSound: false,
+          'login_channel_v3',
+          'Login Notification',
         ),
       ),
     );
@@ -67,14 +94,13 @@ class LocalNotificationService extends GetxService {
   // ================= LOGOUT =================
   Future<void> showLogoutSuccess() async {
     await _plugin.show(
-      2,
+      11,
       'Logout',
-      'Sampai jumpa lagi',
+      'Sampai jumpa lagi 👋',
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'general_channel',
-          'General Notification',
-          playSound: false,
+          'logout_channel_v3',
+          'Logout Notification',
         ),
       ),
     );
@@ -83,14 +109,13 @@ class LocalNotificationService extends GetxService {
   // ================= ORDER =================
   Future<void> showOrderSuccess() async {
     await _plugin.show(
-      3,
-      'Order Up!',
+      100,
+      'Order Up! 🎉',
       'Pesanan kamu sudah tercatat',
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'general_channel',
-          'General Notification',
-          playSound: false,
+          'order_channel_v3',
+          'Order Notification',
         ),
       ),
     );

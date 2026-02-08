@@ -6,44 +6,159 @@ import 'package:flutter/foundation.dart';
 class SupabaseService extends GetxService {
   late final SupabaseClient client;
 
+  // ================= INIT =================
   Future<SupabaseService> init() async {
     try {
-      if (kDebugMode) {
-        debugPrint('Loading .env file...');
-      }
-
       await dotenv.load(fileName: ".env");
 
       final supabaseUrl = dotenv.env['SUPABASE_URL'];
       final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
 
       if (supabaseUrl == null || supabaseAnonKey == null) {
-        throw Exception(
-          'Supabase URL or Anon Key is not set in the environment variables.',
-        );
+        throw Exception('Supabase env not configured');
       }
 
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
+        authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
+      );
 
       client = Supabase.instance.client;
 
       if (kDebugMode) {
-        debugPrint('Supabase initialized with URL: $supabaseUrl');
+        debugPrint('✅ Supabase initialized');
       }
 
       return this;
-    } catch (e) {
-      debugPrint('error initializing supabase: $e');
+    } catch (e, s) {
+      debugPrint('❌ Supabase init error: $e');
+      debugPrintStack(stackTrace: s);
       rethrow;
     }
   }
 
-  //Auth helpers
+  Future<void> signOut() async {
+    await client.auth.signOut();
+  }
+
+  // ================= AUTH =================
   User? get currentUser => client.auth.currentUser;
   Session? get currentSession => client.auth.currentSession;
+
   Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
 
-  //Database helpers
-  SupabaseQueryBuilder from(String table) => client.from(table);
-  SupabaseStorageClient get storage => client.storage;
+  bool get isLoggedIn => currentSession != null;
+
+  // ================= ORDER =================
+  Future<String> createOrder({
+    required int totalPrice,
+    required List<Map<String, dynamic>> items,
+    required String paymentMethod,
+    required String address,
+    double? latitude,
+    double? longitude,
+  }) async {
+    // 🔥 DEBUG PALING AWAL
+    debugPrint('🔥 createOrder() DIPANGGIL DARI SupabaseService');
+    debugPrint('🔥 paymentMethod = $paymentMethod');
+    debugPrint('🔥 address = $address');
+    debugPrint('🔥 latitude = $latitude');
+    debugPrint('🔥 longitude = $longitude');
+
+    debugPrint('🧪 ITEMS MASUK KE SUPABASE:');
+    for (final item in items) {
+      debugPrint(item.toString());
+    }
+
+    final user = currentUser;
+    if (user == null) {
+      throw Exception('User belum login');
+    }
+
+    try {
+      // 1️⃣ SIMPAN ORDER
+      final order = await client
+          .from('orders')
+          .insert({
+            'user_id': user.id,
+            'total_price': totalPrice,
+            'status': 'pending',
+            'payment_method': paymentMethod,
+            'delivery_address': address,
+            'delivery_lat': latitude,
+            'delivery_lng': longitude,
+          })
+          .select()
+          .single();
+
+      final String orderId = order['id'];
+
+      // 2️⃣ SIMPAN ITEM PESANAN (FIX FINAL)
+      final orderItems = items.map((item) {
+        if (item['id'] == null) {
+          throw Exception('product_id NULL ❌ — cek CartItem.id');
+        }
+
+        return {
+          'order_id': orderId,
+          'product_id': item['id'], // 🔥 INI YANG HILANG SELAMA INI
+          'product_name': item['name'],
+          'price': item['price'],
+          'qty': item['qty'],
+          'emoji': item['emoji'],
+        };
+      }).toList();
+
+      await client.from('order_items').insert(orderItems);
+
+      return orderId;
+    } catch (e, s) {
+      debugPrint('❌ createOrder error: $e');
+      debugPrintStack(stackTrace: s);
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getOrderHistory() async {
+    final user = currentUser;
+    if (user == null) return [];
+
+    final res = await client
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(res);
+  }
+
+  Future<String> getUserRole() async {
+    final user = currentUser;
+    if (user == null) return 'user';
+
+    final res = await client
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    return res['role'] ?? 'user';
+  }
+
+  Future<List<Map<String, dynamic>>> getAllOrders() async {
+    final res = await client
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(res);
+  }
+
+  Future<void> updateOrderStatus({
+    required String orderId,
+    required String status,
+  }) async {
+    await client.from('orders').update({'status': status}).eq('id', orderId);
+  }
 }

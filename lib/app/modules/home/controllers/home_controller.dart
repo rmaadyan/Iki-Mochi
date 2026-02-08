@@ -1,17 +1,17 @@
-// lib/app/modules/home/controllers/home_controller.dart
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mochi/app/data/services/mochi_service.dart';
 import 'package:mochi/app/data/models/mochi_model.dart';
-import 'package:mochi/app/data/models/mochi_service.dart';
 
 class HomeController extends GetxController {
   final MochiService mochiService;
 
   HomeController({required this.mochiService});
 
-  final popular = <MochiModel>[].obs;
-  final specials = <SpecialMochiModel>[].obs;
-  final isLoading = false.obs;
+  // ================= STATE =================
+  final RxList<MochiModel> popularMochis = <MochiModel>[].obs;
+  final RxList<MochiModel> specialMochis = <MochiModel>[].obs;
+  final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
@@ -19,17 +19,18 @@ class HomeController extends GetxController {
     loadData();
   }
 
+  // ================= LOAD DATA =================
   Future<void> loadData() async {
     try {
       isLoading.value = true;
-      final p = await mochiService.fetchPopular();
-      final s = await mochiService.fetchSpecials();
-      popular.assignAll(p);
-      specials.assignAll(s);
+
+      final popular = await mochiService.fetchPopular();
+      final special = await mochiService.fetchSpecial();
+
+      popularMochis.assignAll(popular);
+      specialMochis.assignAll(special);
     } catch (e, st) {
-      // jangan panik, cuma log
-      // print / debugPrint boleh dipakai
-      debugPrint('failed loadData: $e\n$st');
+      debugPrint('HomeController loadData error: $e\n$st');
     } finally {
       isLoading.value = false;
     }
